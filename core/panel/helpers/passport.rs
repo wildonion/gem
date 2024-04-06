@@ -38,7 +38,7 @@ pub trait Passport{
         connection: &mut DbPoolConnection) 
         -> Result<JWTClaims, PanelHttpResponse>;
 
-    async fn get_passport<T: UserDataExt>(&self, login_info: T, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
+    async fn get_passport<T: UserDataExt>(&self, attempts: u8, login_info: T, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut DbPoolConnection) 
         -> Result<PanelHttpResponse, PanelHttpResponse>;
 
@@ -185,7 +185,7 @@ impl Passport for HttpRequest{
 
     // UserDataExt is only visible in this crate and can 
     // only be impl for other types only in here
-    async fn get_passport<T: UserDataExt>(&self, login_info: T,
+    async fn get_passport<T: UserDataExt>(&self, attempts: u8, login_info: T,
         redis_client:redis::Client, 
         redis_actor:Addr<RedisActor>, 
         connection: &mut DbPoolConnection) 
@@ -212,6 +212,11 @@ impl Passport for HttpRequest{
 
                 if !pswd_flag{
 
+                    // 1 failed attempt
+                    let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                    let login_attempts = format!("user_login_attempts_for_{}", &login_info.get_identifier());
+                    let _: () = redis_conn.set(login_attempts, attempts).await.unwrap();
+
                     let resp = Response::<String>{
                         data: Some(login_info.get_identifier()),
                         message: WRONG_PASSWORD,
@@ -233,6 +238,11 @@ impl Passport for HttpRequest{
             },
             Err(resp) => {
 
+                // 1 failed attempt
+                let mut redis_conn = redis_client.get_async_connection().await.unwrap();
+                let login_attempts = format!("user_login_attempts_for_{}", &login_info.get_identifier());
+                let _: () = redis_conn.set(login_attempts, attempts).await.unwrap();
+                
                 let resp = Response::<String>{
                     data: Some(login_info.get_password()),
                     message: WRONG_IDENTIFIER,

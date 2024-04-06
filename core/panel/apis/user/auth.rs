@@ -24,6 +24,48 @@ pub(self) async fn login_with_identifier_and_password(
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
+
+    // logic to prevent bruteforce attacks
+    let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
+    let unique_req_id = user_login_info.clone().identifier;
+    let chill_key = format!("chill_admin_login");
+    let login_attempts = format!("user_login_attempts_for_{}", unique_req_id);
+    let get_chill_key: RedisResult<u8> = redis_conn.get(chill_key.clone()).await;
+    let mut attempts = match get_chill_key{
+        Ok(val) => {
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                &format!("Chill For 5 Mins"), // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        },
+        Err(e) => {
+            let get_redis_login_attempts: RedisResult<u8> = redis_conn.get(login_attempts.clone()).await;
+            let redis_login_attempts = match get_redis_login_attempts{
+                Ok(attempts) => attempts,
+                Err(e) => 0 // no attempts yet
+            };
+            redis_login_attempts
+        }
+    };
+
+    if attempts == 3{
+        // chill 5 mins
+        let _: () = redis_conn.set_ex(chill_key.clone(), 0, 300).await.unwrap();
+        // reject request
+        resp!{
+            &[u8], // the data type
+            &[], // response data
+            &format!("You've Reached Your Max Attempts, Chill 5 Mins"), // response message
+            StatusCode::NOT_ACCEPTABLE, // status code
+            None::<Cookie<'_>>, // cookie
+        }
+    }
+    attempts += 1;
+
+
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
             
@@ -43,7 +85,7 @@ pub(self) async fn login_with_identifier_and_password(
             }
 
             let login_info = user_login_info.to_owned();
-            match req.get_passport(login_info, redis_client.clone(), redis_actix_actor, connection).await{
+            match req.get_passport(attempts, login_info, redis_client.clone(), redis_actix_actor, connection).await{
                 Ok(ok_resp) => ok_resp,
                 Err(err_resp) => err_resp
             }

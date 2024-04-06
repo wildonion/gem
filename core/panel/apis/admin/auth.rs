@@ -25,6 +25,45 @@ pub(self) async fn login(
     let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
     let redis_actix_actor = storage.as_ref().clone().unwrap().get_redis_actix_actor().await.unwrap();
 
+    // logic to prevent bruteforce attacks regardless of who is trying to send a request
+    let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
+    let chill_key = format!("chill_admin_login");
+    let login_attempts = format!("admin_login_attempts");
+    let get_chill_key: RedisResult<u8> = redis_conn.get(chill_key.clone()).await;
+    let mut attempts = match get_chill_key{
+        Ok(val) => {
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                &format!("Chill For 5 Mins"), // response message
+                StatusCode::NOT_ACCEPTABLE, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        },
+        Err(e) => {
+            let get_redis_login_attempts: RedisResult<u8> = redis_conn.get(login_attempts.clone()).await;
+            let redis_login_attempts = match get_redis_login_attempts{
+                Ok(attempts) => attempts,
+                Err(e) => 0 // no attempts yet
+            };
+            redis_login_attempts
+        }
+    };
+
+    if attempts == 3{
+        // chill 5 mins
+        let _: () = redis_conn.set_ex(chill_key.clone(), 0, 300).await.unwrap();
+        // reject request
+        resp!{
+            &[u8], // the data type
+            &[], // response data
+            &format!("You've Reached Your Max Attempts, Chill 5 Mins"), // response message
+            StatusCode::NOT_ACCEPTABLE, // status code
+            None::<Cookie<'_>>, // cookie
+        }
+    }
+    attempts += 1;
+
 
     match storage.clone().unwrap().get_pgdb().await{
         Some(pg_pool) => {
@@ -67,6 +106,10 @@ pub(self) async fn login(
                             };
 
                             if !pswd_flag{
+                                
+                                // 1 failed attempt 
+                                let _: () = redis_conn.set(login_attempts, attempts).await.unwrap();
+
                                 resp!{
                                     String, // the data type
                                     user_name.to_owned(), // response data
@@ -80,7 +123,10 @@ pub(self) async fn login(
         
                         },
                         _ => {
-        
+                            
+                            // 1 failed attempt 
+                            let _: () = redis_conn.set(login_attempts, attempts).await.unwrap();
+
                             resp!{
                                 String, // the data type
                                 user_name.to_owned(), // response data
