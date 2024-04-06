@@ -3128,9 +3128,25 @@ async fn create_nft_with_pic(
                             return err_resp;
                         };
 
-                        /* json_data can by any content, here we're trying to map it into the NewUserNftRequest struct */
-                        let new_user_nft_request = serde_json::from_value::<NewUserNftRequest>(json_data).unwrap();
-                        
+                        use crate::models::users_nfts::NewUserNftRequestString;
+                        /* json_data can by any content, here we're trying to map it into the NewUserNftRequestString struct */
+                        let new_user_nft_request = serde_json::from_value::<NewUserNftRequestString>(json_data).unwrap();
+
+                        // mapping the json string into NewUserNftRequest struct
+                        let new_user_nft_request = NewUserNftRequest{
+                            caller_cid: new_user_nft_request.clone().caller_cid,
+                            amount: new_user_nft_request.clone().amount.parse::<i64>().unwrap(),
+                            col_id: new_user_nft_request.clone().col_id.parse::<i32>().unwrap(),
+                            contract_address: new_user_nft_request.clone().contract_address,
+                            nft_name: new_user_nft_request.clone().nft_name,
+                            nft_description: new_user_nft_request.clone().nft_description,
+                            current_price: new_user_nft_request.clone().current_price.parse::<i64>().unwrap(),
+                            attributes: Some(serde_json::from_str::<serde_json::Value>(&new_user_nft_request.clone().attributes).unwrap()),
+                            extra: Some(serde_json::from_str::<serde_json::Value>(&new_user_nft_request.clone().extra).unwrap()),
+                            tx_signature: new_user_nft_request.clone().tx_signature,
+                            hash_data: new_user_nft_request.clone().hash_data
+                        };
+
                         /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */
                         /*   -=-=-=-=-=- USER MUST BE KYCED -=-=-=-=-=-  */
                         /*   -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=  */

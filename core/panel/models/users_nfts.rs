@@ -288,6 +288,21 @@ pub struct CreateNftMetadataUriRequest{
 }
 
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct NewUserNftRequestString{
+    pub caller_cid: String,
+    pub amount: String,
+    pub col_id: String,
+    pub contract_address: String,
+    pub nft_name: String,
+    pub nft_description: String,
+    pub current_price: String,
+    pub extra: String, /* pg key, value based json binary object */
+    pub attributes: String, /* pg key, value based json binary object */
+    pub tx_signature: String,
+    pub hash_data: String,
+}
+
 impl NftExt for NewUserNftRequest{
     type AssetInfo = NewUserNftRequest;
 
