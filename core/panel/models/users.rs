@@ -1166,6 +1166,46 @@ impl User{
 
     }
 
+    pub async fn fetch_wallet_by_username_or_mail_or_scid_or_cid(user_info: &str, 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<UserWalletInfoResponse, PanelHttpResponse>{
+
+        let single_user = users
+            .filter(
+                username.eq(user_info.to_string())
+                .or(mail.eq(user_info.to_string()))
+                .or(cid.eq(user_info.to_string()))
+                .or(screen_cid.eq(user_info.to_string()))
+            )
+            .first::<User>(connection);
+                        
+        let Ok(user) = single_user else{
+            let resp = Response{
+                data: Some(user_info),
+                message: USER_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        Ok(
+            UserWalletInfoResponse{ 
+                username: user.username, 
+                avatar: user.avatar,
+                mail: user.mail, 
+                screen_cid: user.screen_cid, 
+                stars: user.stars, 
+                created_at: user.created_at.to_string(),
+                bio: user.bio,
+                banner: user.banner, 
+                extra: user.extra,
+            }
+        )
+
+    }
+
     pub async fn fetch_wallet_by_username_or_mail_or_scid(user_info: &str, 
         connection: &mut DbPoolConnection) -> Result<UserWalletInfoResponse, PanelHttpResponse>{
 
