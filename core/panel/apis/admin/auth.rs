@@ -27,8 +27,9 @@ pub(self) async fn login(
 
     // logic to prevent bruteforce attacks regardless of who is trying to send a request
     let mut redis_conn = redis_client.clone().get_async_connection().await.unwrap();
-    let chill_key = format!("chill_admin_login");
-    let login_attempts = format!("admin_login_attempts");
+    let unique_req_id = login_info.clone().username;
+    let chill_key = format!("chill_admin_login_for_{}", unique_req_id.clone());
+    let login_attempts = format!("admin_login_attempts_for_{}", unique_req_id);
     let get_chill_key: RedisResult<u8> = redis_conn.get(chill_key.clone()).await;
     let mut attempts = match get_chill_key{
         Ok(val) => {
@@ -53,6 +54,8 @@ pub(self) async fn login(
     if attempts == 3{
         // chill 5 mins
         let _: () = redis_conn.set_ex(chill_key.clone(), 0, 300).await.unwrap();
+        // restart counter 
+        let _: () = redis_conn.set(login_attempts, 0).await.unwrap();
         // reject request
         resp!{
             &[u8], // the data type
