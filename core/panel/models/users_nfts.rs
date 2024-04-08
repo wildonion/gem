@@ -11,7 +11,7 @@ use crate::events::publishers::action::{SingleUserNotif, NotifData, ActionType};
 use crate::helpers::misc::{Response, Limit};
 use crate::schema::users_nfts::dsl::*;
 use crate::schema::users_nfts;
-use self::constants::{APP_NAME, NO_NFT_FOUND_IN_COLLECTION};
+use self::constants::{APP_NAME, NO_NFT_FOUND_IN_COLLECTION, NFT_MINT_LOCK};
 use self::schema::nfts_comments;
 
 use super::nfts_comments::NewNftCommentRequest;
@@ -2658,6 +2658,11 @@ impl UserNft{
         connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
 
+        // considerring a lock in here to avoid race conditions and minting 
+        // nft twice at the same time, users want to mint a single nft inside
+        // the market, there must be a lock to be acquired during the first
+        // request to avoid writing into db twice. 
+        let lock = NFT_MINT_LOCK.lock().await;
         
         if mint_nft_request.event_type.as_str() == "mint"{
 

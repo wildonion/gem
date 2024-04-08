@@ -68,6 +68,7 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::task::exports::edit_task);
     config.service(apis::admin::user::exports::edit_user);
     config.service(apis::admin::user::exports::delete_user);
+    config.service(apis::admin::wallet::exports::delete_wallet);
     config.service(apis::admin::user::exports::get_users);
     config.service(apis::admin::task::exports::get_admin_tasks);
     config.service(apis::admin::task::exports::get_users_tasks);

@@ -24,6 +24,9 @@ use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRo
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
 
+pub static NFT_MINT_LOCK: Lazy<tokio::sync::Mutex<()>> = Lazy::new(||{
+    tokio::sync::Mutex::new(())
+});
 pub const CHARSNUMSSPECIAL: &str = "!@#$%&*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnporstuvwxyz";
 pub type DbPoolConnection = PooledConnection<ConnectionManager<PgConnection>>;
 pub type PanelHttpResponse = Result<actix_web::HttpResponse, actix_web::Error>;

@@ -129,7 +129,6 @@ pub(self) async fn register_new_user(
 
 }
 
-
 #[post("/edit-user")]
 #[passport(admin)]
 pub(self) async fn edit_user(

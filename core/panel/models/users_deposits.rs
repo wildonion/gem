@@ -99,6 +99,88 @@ pub struct UserDepositDataWithWalletInfo{
 */
 impl UserDeposit{
 
+    pub async fn delete_all_by_cid(u_cid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+
+        match diesel::delete(users_deposits
+            .filter(users_deposits::from_cid.eq(u_cid)))
+            .execute(connection)
+            {
+                Ok(mut num_deleted) => {
+                    
+                    /* also delete any users record if there was any */
+
+                    Ok(num_deleted)
+                
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserDeposit::delete_all_by_cid");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
+    pub async fn delete_all_by_scid(u_scid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+
+        match diesel::delete(users_deposits
+            .filter(users_deposits::recipient_screen_cid.eq(u_scid)))
+            .execute(connection)
+            {
+                Ok(mut num_deleted) => {
+                    
+                    /* also delete any users record if there was any */
+
+                    Ok(num_deleted)
+                
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserDeposit::delete_all_by_scid");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
     pub async fn insert(user_deposit_request: NewUserDepositRequest, succ_mint_tx_hash: String, token_id: String, 
         polygon_recipient_address: String, nft_url: String, redis_actor: Addr<RedisActor>,
         connection: &mut DbPoolConnection) -> Result<UserDepositData, PanelHttpResponse>{

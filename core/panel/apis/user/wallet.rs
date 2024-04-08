@@ -788,8 +788,8 @@ pub(self) async fn make_cid(
                         let create_new_gal = UserPrivateGallery::insert(
                             NewUserPrivateGalleryRequest{
                                 owner_cid: new_id.clone().new_cid.unwrap_or(String::from("")),
-                                gal_name: format!("{} with {} first private gallery", new_id.username, new_id.clone().screen_cid.unwrap_or(String::from(""))),
-                                gal_description: format!("{} with {} first private gallery", new_id.username, new_id.clone().screen_cid.unwrap_or(String::from(""))),
+                                gal_name: format!("{} first private room at time {}", new_id.username, chrono::Local::now().to_string()),
+                                gal_description: format!("{} first private room at time {}", new_id.username, chrono::Local::now().to_string()),
                                 extra: None,
                                 tx_signature: String::from(""),
                                 hash_data: String::from(""),

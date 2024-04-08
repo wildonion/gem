@@ -1677,6 +1677,47 @@ impl UserFan{
 
     }
 
+    pub async fn delete_by_screen_cid(u_scid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+
+        match diesel::delete(users_fans
+            .filter(users_fans::user_screen_cid.eq(u_scid)))
+            .execute(connection)
+            {
+                Ok(mut num_deleted) => {
+                    
+                    /* also delete any users record if there was any */
+
+                    Ok(num_deleted)
+                
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                        
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserFan::delete_by_screen_cid");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
     pub async fn remove_friend(remove_friend_request: RemoveFriend, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut DbPoolConnection) 
             -> Result<UserFanData, PanelHttpResponse>{

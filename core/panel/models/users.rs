@@ -5061,6 +5061,80 @@ impl User{
 
     }
 
+    pub async fn delete_wallet_by_admin(u_id: i32, connection: &mut DbPoolConnection) -> Result<FetchUser, PanelHttpResponse>{
+
+        let wscid: Option<String> = None;
+        let wcid: Option<String> = None;
+        let wregion: Option<String> = None;
+
+        let Ok(user) = User::find_by_id(u_id, connection).await else{
+            let resp = Response{
+                data: Some(u_id),
+                message: USER_NOT_FOUND,
+                status: 404,
+                is_error: true,
+            };
+            return Err(
+                Ok(HttpResponse::NotFound().json(resp))
+            );
+        };
+
+        let user_screen_cid = user.screen_cid.unwrap_or_default();
+        let user_cid = user.cid.unwrap_or_default();
+
+        match diesel::update(users.find(u_id))
+            .set(
+                (
+                    region.eq(wregion),
+                    screen_cid.eq(wscid),
+                    cid.eq(wcid),
+                    username.eq(String::from("")),
+                )
+            )
+            .returning(FetchUser::as_returning())
+            .get_result(connection)
+            {
+                Ok(updated_user) => {
+                    
+                    use crate::models::users_deposits::UserDeposit;
+                    use crate::models::users_withdrawals::UserWithdrawal;
+                    let dels_col_info = UserCollection::delete_all_collections_by_owner_screen_cid(&user_screen_cid, connection).await;
+                    let dels_deposits_info_cid = UserDeposit::delete_all_by_cid(&user_cid, connection).await;
+                    let dels_deposits_info_scid = UserDeposit::delete_all_by_scid(&user_screen_cid, connection).await;
+                    let dels_user_fan_info = UserFan::delete_by_screen_cid(&user_screen_cid, connection).await;
+                    let dels_user_gal_info = UserPrivateGallery::delete_by_screen_cid(&user_screen_cid, connection).await;
+                    let dels_user_gal_info = UserWithdrawal::delete_by_cid(&user_cid, connection).await;
+
+                    Ok(updated_user)
+                },
+                Err(e) => {
+
+                    let resp_err = &e.to_string();
+
+
+                    /* custom error handler */
+                    use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                     
+                    let error_content = &e.to_string();
+                    let error_content = error_content.as_bytes().to_vec();  
+                    let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "User::delete_wallet_by_admin");
+                    let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                    let resp = Response::<&[u8]>{
+                        data: Some(&[]),
+                        message: resp_err,
+                        status: 500,
+                        is_error: true,
+                    };
+                    return Err(
+                        Ok(HttpResponse::InternalServerError().json(resp))
+                    );
+
+                }
+            }
+
+    }
+
 }
 
 
@@ -5208,8 +5282,8 @@ impl Id{
                 let wallet = walletreq::evm::get_wallet();
                 let data_to_be_signed = serde_json::json!({
                     "owner_cid": wallet.secp256k1_public_address.as_ref().unwrap(),
-                    "gal_name": format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
-                    "gal_description": format!("{} with {} first private gallery", id_username, wallet.secp256k1_public_address.as_ref().unwrap()),
+                    "gal_name": format!("{} first private room at time {}", id_username, chrono::Local::now().to_string()),
+                    "gal_description": format!("{} first private room at time {}", id_username, chrono::Local::now().to_string()),
                     "extra": None::<Option<serde_json::Value>> // serde needs to know the exact type of extra which can be any json value data
                 });
 
