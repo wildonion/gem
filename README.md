@@ -2,16 +2,18 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-is a crypto based social network platform leveraging the **Polygon** blockchain empowering lovers to build and take participate in social events with their NFT artworks: 
-- actor based component APIs, a reliable design pattern facilitating the communication between each API endpoint without sending HTTP requests, only by utilising actor message sending pattern supports only local communicating process.
-- actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
-- **SSE** technology to inform clients by receiving automatic updates from the server via an HTTP connection. 
+is a crypto based social network platform leveraging the **Polygon** blockchain empowering lovers to build and take participate in social events (see [zoomate](https://github.com/wildonion/zoomate)) with their NFT artworks
 
 ### 🍔 Features
 
 > Note that the idea behind the chatroom launchpad has been moved to the **hoopoe** platform with different implementations.
 
-- [hoopoe](https://github.com/wildonion/zoomate/tree/main/hoopoe) a platform for social events 
+- actor based component APIs, a reliable design pattern facilitating the communication between each API endpoint without sending HTTP requests, only by utilising actor message sending pattern supports only local communicating process.
+
+- actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
+- **SSE** technology to inform clients by receiving automatic updates from the server via an HTTP connection.
+ 
+- zoomate [hoopoe](https://github.com/wildonion/zoomate/tree/main/hoopoe) a platform for social events 
 
 - an event managing and reservation system with reveal-participant-role functionality
 
