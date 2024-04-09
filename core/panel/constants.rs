@@ -24,8 +24,19 @@ use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRo
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
 
-pub static NFT_MINT_LOCK: Lazy<tokio::sync::Mutex<()>> = Lazy::new(||{
-    tokio::sync::Mutex::new(())
+pub static NFT_MINT_LOCK: Lazy<std::sync::Arc<tokio::sync::Mutex<Vec<i32>>>> = Lazy::new(||{
+    std::sync::Arc::new(
+        tokio::sync::Mutex::new(
+            vec![]
+        )
+    )
+});
+pub static NFT_BUY_LOCK: Lazy<std::sync::Arc<tokio::sync::Mutex<Vec<i32>>>> = Lazy::new(||{
+    std::sync::Arc::new(
+        tokio::sync::Mutex::new(
+            vec![]
+        )
+    )
 });
 pub const CHARSNUMSSPECIAL: &str = "!@#$%&*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnporstuvwxyz";
 pub type DbPoolConnection = PooledConnection<ConnectionManager<PgConnection>>;

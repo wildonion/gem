@@ -176,6 +176,67 @@ pub struct GalleryOwnerCount{
 */
 impl UserPrivateGallery{
 
+    pub async fn remove_scid_from_invited_friends(u_scid: &str, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) -> Result<usize, PanelHttpResponse>{
+
+        match users_galleries
+            .load::<UserPrivateGallery>(connection)
+        {
+            Ok(gals) => {
+
+                let mut deleted = 0;
+                
+                
+                for gal in gals{
+
+                    let inv_frds = gal.invited_friends;
+                    if inv_frds.is_some(){
+                        let mut friends_ = inv_frds.unwrap();
+                        if friends_.contains(&Some(u_scid.to_string())){
+                            let scid_idx = friends_.iter().position(|scid| *scid == Some(u_scid.to_string())).unwrap();
+                            friends_.remove(scid_idx);
+                            deleted += 1;
+                            // update gal
+                            diesel::update(users_galleries.find(gal.id))
+                                .set(users_galleries::invited_friends.eq(friends_))
+                                .returning(UserPrivateGallery::as_returning())
+                                .get_result(connection);
+
+
+                        }
+                    }
+
+                }
+
+                Ok(deleted)
+
+            },
+            Err(e) => {
+
+                let resp_err = &e.to_string();
+
+                /* custom error handler */
+                use helpers::error::{ErrorKind, StorageError::{Diesel, Redis}, PanelError};
+                
+                let error_content = &e.to_string();
+                let error_content = error_content.as_bytes().to_vec();  
+                let error_instance = PanelError::new(*STORAGE_IO_ERROR_CODE, error_content, ErrorKind::Storage(Diesel(e)), "UserPrivateGallery::remove_scid_from_invited_friends");
+                let error_buffer = error_instance.write().await; /* write to file also returns the full filled buffer from the error  */
+
+                let resp = Response::<&[u8]>{
+                    data: Some(&[]),
+                    message: resp_err,
+                    status: 500,
+                    is_error: true,
+                };
+                return Err(
+                    Ok(HttpResponse::InternalServerError().json(resp))
+                );
+
+            }
+        }
+                
+
+    }
 
     pub async fn get_owners_with_lots_of_galleries(owners: Vec<UserData>, redis_client: RedisClient,
         connection: &mut DbPoolConnection) 
@@ -188,7 +249,7 @@ impl UserPrivateGallery{
                     continue;
                 }
                 
-                let owner_screen_cid_ = owner.screen_cid.unwrap();
+                let owner_screen_cid_ = owner.screen_cid.unwrap_or_default();
                 let get_all_galleries_owned_by = UserPrivateGallery::get_all_for_without_limit(&owner_screen_cid_, redis_client.clone(), connection);
                 let galleries_owned_by = if get_all_galleries_owned_by.is_ok(){
                     get_all_galleries_owned_by.unwrap()

@@ -5104,6 +5104,7 @@ impl User{
                     let dels_user_fan_info = UserFan::delete_by_screen_cid(&user_screen_cid, connection).await;
                     let dels_user_gal_info = UserPrivateGallery::delete_by_screen_cid(&user_screen_cid, connection).await;
                     let dels_user_gal_info = UserWithdrawal::delete_by_cid(&user_cid, connection).await;
+                    let dels_inv_frd_from_gal = UserPrivateGallery::remove_scid_from_invited_friends(&user_screen_cid, connection).await;
 
                     Ok(updated_user)
                 },

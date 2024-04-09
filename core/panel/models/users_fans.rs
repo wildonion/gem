@@ -1929,7 +1929,7 @@ impl UserFan{
             return Err(resp_err);
         };
 
-        let user_screen_cid_ = friend_info.clone().screen_cid.unwrap();
+        let user_screen_cid_ = friend_info.clone().screen_cid.unwrap_or_default();
         match Self::get_user_fans_data_for(&user_screen_cid_, connection).await{
 
             /* already inserted just update the friends field */

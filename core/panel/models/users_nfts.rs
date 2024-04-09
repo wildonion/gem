@@ -855,7 +855,7 @@ impl UserNft{
                 continue;
             }
             
-            let owner_screen_cid_ = owner.screen_cid.unwrap();
+            let owner_screen_cid_ = owner.screen_cid.unwrap_or_default();
             let get_all_nfts_owned_by = UserNft::get_all_by_current_owner(&owner_screen_cid_, connection).await;
             let nfts_owned_by = if get_all_nfts_owned_by.is_ok(){
                 get_all_nfts_owned_by.unwrap()
@@ -1684,7 +1684,7 @@ impl UserNft{
                     nft_id: comment.nft_id, 
                     content: comment.content.clone(), 
                     owner_screen_cid: {
-                        User::find_by_id_none_async(comment.user_id, connection).unwrap().screen_cid.unwrap()
+                        User::find_by_id_none_async(comment.user_id, connection).unwrap().screen_cid.unwrap_or_default()
                     }, 
                     published_at: comment.published_at.timestamp(),
                     owner_username: {
@@ -1728,7 +1728,7 @@ impl UserNft{
             upvote_users.push(
                 LikeUserInfo{ 
                     screen_cid: {
-                        User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().screen_cid.unwrap()
+                        User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().screen_cid.unwrap_or_default()
                     }, 
                     username: {
                         User::find_by_id_none_async(upvote_like.user_id, connection).unwrap().username
@@ -1745,7 +1745,7 @@ impl UserNft{
             downvote_users.push(
                 LikeUserInfo{ 
                     screen_cid: {
-                        User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().screen_cid.unwrap()
+                        User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().screen_cid.unwrap_or_default()
                     }, 
                     username: {
                         User::find_by_id_none_async(downvote_like.user_id, connection).unwrap().username
@@ -1897,7 +1897,7 @@ impl UserNft{
                                         nft_id: comment.nft_id, 
                                         content: comment.content.clone(), 
                                         owner_screen_cid: {
-                                            User::find_by_id(comment.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                            User::find_by_id(comment.user_id, connection).await.unwrap().screen_cid.unwrap_or_default()
                                         }, 
                                         published_at: comment.published_at.timestamp(),
                                         owner_username: {
@@ -1939,7 +1939,7 @@ impl UserNft{
                             upvote_users.push(
                                 LikeUserInfo{ 
                                     screen_cid: {
-                                        User::find_by_id(upvote_like.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                        User::find_by_id(upvote_like.user_id, connection).await.unwrap().screen_cid.unwrap_or_default()
                                     }, 
                                     username: {
                                         User::find_by_id(upvote_like.user_id, connection).await.unwrap().username
@@ -1956,7 +1956,7 @@ impl UserNft{
                             downvote_users.push(
                                 LikeUserInfo{ 
                                     screen_cid: {
-                                        User::find_by_id(downvote_like.user_id, connection).await.unwrap().screen_cid.unwrap()
+                                        User::find_by_id(downvote_like.user_id, connection).await.unwrap().screen_cid.unwrap_or_default()
                                     }, 
                                     username: {
                                         User::find_by_id(downvote_like.user_id, connection).await.unwrap().username
@@ -2383,6 +2383,24 @@ impl UserNft{
 
                     let pay_to_seller = (nft_price - royalty_amount.round()) as i64;
 
+
+                    let mut lock_ids = NFT_BUY_LOCK.lock().await;
+                    // reject the request
+                    if lock_ids.contains(&nft_data.id){
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: &format!("NFT Is Being Bought By Another User"),
+                            status: 406,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        ); 
+                    }
+                    // acquire the lock
+                    (*lock_ids).push(nft_data.id);
+
+
                     /* distribute shares */
                     let get_updated_user = Self::distributed_shares(
                         user.clone(),
@@ -2397,6 +2415,9 @@ impl UserNft{
                         connection
                     ).await;
                     let Ok(updated_user) = get_updated_user else{
+
+                        // release the lock on this error
+                        (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
 
                         let err_resp = get_updated_user.unwrap_err();
                         return Err(err_resp);
@@ -2415,6 +2436,9 @@ impl UserNft{
 
                     // if anything went wrong we simpley revert the shares
                     if status == 1{
+
+                        // release the lock on this error
+                        (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
 
                         /* revert shares */
                         let get_updated_user = Self::revert_shares(
@@ -2453,6 +2477,8 @@ impl UserNft{
                     buy_nft_request.is_listed = Some(false);
                     buy_nft_request.current_price = Some(0);
 
+                    // release the lock after transferring
+                    (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
 
                     match Self::update_nft(
                         buy_nft_request.clone(), 
@@ -2657,14 +2683,31 @@ impl UserNft{
     pub async fn mint_nft(mut mint_nft_request: UpdateUserNftRequest, redis_client: redis::Client, redis_actor: Addr<RedisActor>,
         connection: &mut DbPoolConnection) 
         -> Result<UserNftData, PanelHttpResponse>{
-
-        // considerring a lock in here to avoid race conditions and minting 
-        // nft twice at the same time, users want to mint a single nft inside
-        // the market, there must be a lock to be acquired during the first
-        // request to avoid writing into db twice. 
-        let lock = NFT_MINT_LOCK.lock().await;
         
         if mint_nft_request.event_type.as_str() == "mint"{
+
+            let get_nft = UserNft::find_by_id(mint_nft_request.nft_id, connection).await;
+            let Ok(nft_data) = get_nft else{
+                let err_resp = get_nft.unwrap_err();
+                return Err(err_resp);
+            };
+
+            if nft_data.is_minted.is_some() && 
+                nft_data.is_minted.unwrap() == true &&
+                nft_data.onchain_id.is_some() &&
+                !nft_data.onchain_id.unwrap().is_empty(){
+
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: NFT_IS_ALREADY_MINTED,
+                        status: 302,
+                        is_error: false
+                    };
+                    return Err(
+                        Ok(HttpResponse::Found().json(resp))
+                    );
+
+                }
 
             let caller_screen_cid = walletreq::evm::get_keccak256_from(mint_nft_request.clone().caller_cid);
 
@@ -2700,23 +2743,6 @@ impl UserNft{
                 let err_resp = get_gallery.unwrap_err();
                 return Err(err_resp);
             };
-
-            if nft_data.is_minted.is_some() && 
-                nft_data.is_minted.unwrap() == true &&
-                nft_data.onchain_id.is_some() &&
-                !nft_data.onchain_id.unwrap().is_empty(){
-
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: NFT_IS_ALREADY_MINTED,
-                        status: 302,
-                        is_error: false
-                    };
-                    return Err(
-                        Ok(HttpResponse::Found().json(resp))
-                    );
-
-                }
 
                 if mint_nft_request.metadata_uri.is_empty(){
 
@@ -2806,10 +2832,37 @@ impl UserNft{
 
                 }
 
+                /*      ---------------------------------------------------------------------------------
+                        handling atomicity and mutual exclusion state of minting nft in a single node
+                        ---------------------------------------------------------------------------------
+                    client1 send mint request app proceeds with the client1 request it processes it take 30 seconds 
+                    to respond the caller meanwhile client2 sends the mint request for the same item we should reject 
+                    his request cause we have an ingoing process we must reject his request with "another user is 
+                    minting this".
+                */
+                let mut lock_ids = NFT_MINT_LOCK.lock().await;
+                // reject the request
+                if lock_ids.contains(&nft_data.id){
+                    let resp = Response::<'_, &[u8]>{
+                        data: Some(&[]),
+                        message: &format!("NFT Is Being Minted By Another User"),
+                        status: 406,
+                        is_error: true
+                    };
+                    return Err(
+                        Ok(HttpResponse::NotAcceptable().json(resp))
+                    ); 
+                }
+                // acquire the lock
+                (*lock_ids).push(nft_data.id);
+
                 let (new_tx_hash, token_id, status) = 
                     nftport::mint_nft(redis_client.clone(), mint_nft_request.clone()).await;
 
                 if status == 1{
+
+                    // release the lock on this error
+                    (*lock_ids).push(nft_data.id);
 
                     if uubd.is_some() && owner_uubd.is_some(){
                         // if anything goes wrong payback the user
@@ -2838,7 +2891,10 @@ impl UserNft{
                 mint_nft_request.current_owner_screen_cid = caller_screen_cid;
                 mint_nft_request.is_listed = Some(false);
                 mint_nft_request.current_price = Some(0);
-                
+
+                // release the lock, return all ids except nft_data.id
+                (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+
                 match Self::update_nft(
                     mint_nft_request.clone(),
                     redis_client.clone(),
@@ -2958,7 +3014,7 @@ impl UserNft{
             return Err(err_resp);
         };
 
-        if nft_data.current_owner_screen_cid != user.clone().screen_cid.unwrap(){
+        if nft_data.current_owner_screen_cid != user.clone().screen_cid.unwrap_or_default(){
             
             let resp = Response::<'_, &[u8]>{
                 data: Some(&[]),
@@ -3029,7 +3085,7 @@ impl UserNft{
                 }
 
                 /* make sure that there is a user with this screen cid in the app */
-                let recipient = asset_info.clone().transfer_to_screen_cid.unwrap();
+                let recipient = asset_info.clone().transfer_to_screen_cid.unwrap_or_default();
                 let find_recipient_screen_cid = User::find_by_username_or_mail_or_scid(&recipient, connection).await;
                 let Ok(recipient_info) = find_recipient_screen_cid else{
                     
@@ -3038,8 +3094,8 @@ impl UserNft{
                 };
 
                 // check that nft owner and recipient_info are friend
-                let nft_owner_screen_cid = user.clone().screen_cid.unwrap();
-                let recipient_info_screen_cid = recipient_info.clone().screen_cid.unwrap();
+                let nft_owner_screen_cid = user.clone().screen_cid.unwrap_or_default();
+                let recipient_info_screen_cid = recipient_info.clone().screen_cid.unwrap_or_default();
                 let check_we_are_friend = UserFan::are_we_friends(
                     &nft_owner_screen_cid, 
                     &recipient_info_screen_cid, connection).await;
@@ -3237,7 +3293,7 @@ impl UserNft{
                     connection).await{
                         Ok(updated_user_nft_data) => {
 
-                            let get_nft_owner_friends = UserFan::get_all_my_friends_without_limit(&user.clone().screen_cid.unwrap(), connection).await;
+                            let get_nft_owner_friends = UserFan::get_all_my_friends_without_limit(&user.clone().screen_cid.unwrap_or_default(), connection).await;
                             if get_nft_owner_friends.is_ok(){
                                 let nft_owner_friends = get_nft_owner_friends.unwrap();
                                 let friends_data = nft_owner_friends.clone().construct_friends_data(connection);

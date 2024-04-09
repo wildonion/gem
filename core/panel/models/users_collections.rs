@@ -415,7 +415,7 @@ impl UserCollection{
                     continue;
                 }
     
-                let owner_screen_cid_ = owner.screen_cid.unwrap();
+                let owner_screen_cid_ = owner.screen_cid.unwrap_or_default();
                 let get_all_collections_owned_by = UserCollection::get_all_by_owner(&owner_screen_cid_, connection).await;
                 let collections_owned_by = if get_all_collections_owned_by.is_ok(){
                     get_all_collections_owned_by.unwrap()
