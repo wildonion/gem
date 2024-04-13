@@ -23,10 +23,10 @@ use self::events::subscribers::handlers::actors::notif::action::UserActionActor;
 use self::events::subscribers::handlers::actors::ws::servers::chatroomlp::ChatRoomLaunchpadServer;
 use self::events::subscribers::handlers::actors::ws::servers::mmr::MmrNotifServer;
 use self::events::subscribers::handlers::actors::ws::servers::role::RoleNotifServer;
-
-pub static NFT_MINT_LOCK: Lazy<std::sync::Arc<tokio::sync::Mutex<Vec<i32>>>> = Lazy::new(||{
+ 
+pub static NFT_MINT_LOCK: Lazy<std::sync::Arc<tokio::sync::RwLock<Vec<i32>>>> = Lazy::new(||{
     std::sync::Arc::new(
-        tokio::sync::Mutex::new(
+        tokio::sync::RwLock::new(
             vec![]
         )
     )

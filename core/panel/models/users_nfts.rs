@@ -2384,9 +2384,9 @@ impl UserNft{
                     let pay_to_seller = (nft_price - royalty_amount.round()) as i64;
 
 
-                    let mut lock_ids = NFT_BUY_LOCK.lock().await;
-                    // reject the request
-                    if lock_ids.contains(&nft_data.id){
+                    let rwlock_ids = NFT_MINT_LOCK.clone();
+                    let read_lock = rwlock_ids.read().await;
+                    if (*read_lock).contains(&nft_data.id){
                         let resp = Response::<'_, &[u8]>{
                             data: Some(&[]),
                             message: &format!("NFT Is Being Bought By Another User"),
@@ -2397,8 +2397,11 @@ impl UserNft{
                             Ok(HttpResponse::NotAcceptable().json(resp))
                         ); 
                     }
-                    // acquire the lock
-                    (*lock_ids).push(nft_data.id);
+                    
+                    drop(read_lock);
+
+                    let mut write_lock = rwlock_ids.try_write().unwrap();
+                    (*write_lock).push(nft_data.id);
 
 
                     /* distribute shares */
@@ -2417,7 +2420,7 @@ impl UserNft{
                     let Ok(updated_user) = get_updated_user else{
 
                         // release the lock on this error
-                        (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+                        (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
 
                         let err_resp = get_updated_user.unwrap_err();
                         return Err(err_resp);
@@ -2438,7 +2441,7 @@ impl UserNft{
                     if status == 1{
 
                         // release the lock on this error
-                        (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+                        (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
 
                         /* revert shares */
                         let get_updated_user = Self::revert_shares(
@@ -2478,7 +2481,7 @@ impl UserNft{
                     buy_nft_request.current_price = Some(0);
 
                     // release the lock after transferring
-                    (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+                    // (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
 
                     match Self::update_nft(
                         buy_nft_request.clone(), 
@@ -2803,7 +2806,6 @@ impl UserNft{
                 }
                 let nft_price = get_nft_price.unwrap();
 
-
                 let mut minter_is_owner = false;
                 if nft_data.current_owner_screen_cid == caller_screen_cid{
                     minter_is_owner = true;
@@ -2833,16 +2835,25 @@ impl UserNft{
                 }
 
                 /*      ---------------------------------------------------------------------------------
-                        handling atomicity and mutual exclusion state of minting nft in a single node
+                            handling atomic synchronisation and mutual exclusion state of minting nft
                         ---------------------------------------------------------------------------------
                     client1 send mint request app proceeds with the client1 request it processes it take 30 seconds 
                     to respond the caller meanwhile client2 sends the mint request for the same item we should reject 
                     his request cause we have an ingoing process we must reject his request with "another user is 
                     minting this".
+                    mutex block the caller even if it has requested for reading operation it blocks until the lock gets 
+                    released by the process which is usally happens at the end of the process lifetime (all types owned 
+                    by the method gets freed) but rwlock on the other hand allows reader to read but one of them mutate 
+                    the state at the same time, so i would prefer std::sync::Mutex over tokio::sync::Mutex in this case!
+                    we need to store nft ids in a vector during minting process and remove them once the minting process
+                    gets ended, storing them need to be in a global like type cause here it's not like python and since
+                    we don't have such thing as global type in Rust we should define a type as an static arc mutex to 
+                    store all nft ids during the app execution, the mutex is responsible for mutating the type in other 
+                    threads safely cause we may want to push an id in a another thread without having race conditions.
                 */
-                let mut lock_ids = NFT_MINT_LOCK.lock().await;
-                // reject the request
-                if lock_ids.contains(&nft_data.id){
+                let rwlock_ids = NFT_MINT_LOCK.clone(); // it can also be loaded from app data
+                let read_lock = rwlock_ids.read().await;
+                if (*read_lock).contains(&nft_data.id){
                     let resp = Response::<'_, &[u8]>{
                         data: Some(&[]),
                         message: &format!("NFT Is Being Minted By Another User"),
@@ -2853,16 +2864,20 @@ impl UserNft{
                         Ok(HttpResponse::NotAcceptable().json(resp))
                     ); 
                 }
-                // acquire the lock
-                (*lock_ids).push(nft_data.id);
+                
+                drop(read_lock);
 
+                let mut write_lock = rwlock_ids.try_write().unwrap();
+                (*write_lock).push(nft_data.id);
+
+                // start minting process, it takes approximately 30 seconds.
                 let (new_tx_hash, token_id, status) = 
                     nftport::mint_nft(redis_client.clone(), mint_nft_request.clone()).await;
 
                 if status == 1{
 
                     // release the lock on this error
-                    (*lock_ids).push(nft_data.id);
+                    (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
 
                     if uubd.is_some() && owner_uubd.is_some(){
                         // if anything goes wrong payback the user
@@ -2893,7 +2908,14 @@ impl UserNft{
                 mint_nft_request.current_price = Some(0);
 
                 // release the lock, return all ids except nft_data.id
-                (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+                // this gets released soon before minting an nft that's 
+                // why two client can mint at the same time cause there is
+                // no nft id in this vector during the minting process of the first client
+                // this must be located in a place right after that 30 seconds
+                // we'll pass it to mint function every async task are handled
+                // by the tokio runtime scheduler and the order of executing them 
+                // may not be like the order of their arrival or defenition.
+                // (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
 
                 match Self::update_nft(
                     mint_nft_request.clone(),
