@@ -119,175 +119,119 @@ pub(self) async fn search(
                     })
                     .collect::<Vec<UserData>>();
                          
-            /* search in galleries, collections and nfts */
-            let get_user_galleries_info = users_galleries
-                .load::<UserPrivateGallery>(connection);
-
-            let Ok(galleries_info) = get_user_galleries_info else{
-                let err = get_user_galleries_info.unwrap_err();
-                let resp = Response::<&[u8]>{
-                    data: Some(&[]),
-                    message: &err.to_string(),
-                    status: 500,
-                    is_error: true
-                };
-                return 
-                    Ok(HttpResponse::InternalServerError().json(resp))
-                
-            };
-
-            let mut galleries_info = 
-                galleries_info
-                    .into_iter()
-                    .map(|g|{
-
-                        UserPrivateGalleryData{ 
-                            id: g.id, 
-                            owner_screen_cid: g.owner_screen_cid, 
-                            collections: g.collections, 
-                            gal_name: g.gal_name, 
-                            gal_description: g.gal_description, 
-                            invited_friends: g.invited_friends, 
-                            extra: g.extra, 
-                            gallery_background: g.gallery_background,
-                            created_at: g.created_at.to_string(), 
-                            updated_at: g.updated_at.to_string() 
-                        }
-
-                    })
-                    .collect::<Vec<UserPrivateGalleryData>>();
-
-            /* order based on newest ones */
-            galleries_info.sort_by(|g1, g2|{
-
-                let g1_created_at = NaiveDateTime
-                    ::parse_from_str(&g1.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                    .unwrap();
-
-                let g2_created_at = NaiveDateTime
-                    ::parse_from_str(&g2.created_at, "%Y-%m-%d %H:%M:%S%.f")
-                    .unwrap();
-
-                g2_created_at.cmp(&g1_created_at)
-
-            });
-
-            let mut found_collections = vec![];
-            let mut found_nfts = vec![];
-            for gallery in galleries_info{
-
-                let cols = gallery.collections;
-                let decoded_cols = if cols.is_some(){
-                    serde_json::from_value::<Vec<UserCollectionData>>(cols.unwrap()).unwrap()
-                } else{
-                    vec![]
-                };
-
-                let match_collections = decoded_cols.clone()
-                    .into_iter()
-                    .map(|col| {
-
-                        if col.col_name.contains(&query.q) ||
-                            col.col_description.contains(&query.q) ||
-                            col.owner_screen_cid.contains(&query.q) || 
-                            col.contract_address.contains(&query.q) || 
-                            col.contract_tx_hash.clone().unwrap_or(String::from("")).contains(&query.q)
-                            {
-                                /* -----------------------------------------------------------------
-                                    > in those case that we don't want to create a separate struct 
-                                    and allocate an instance of it to map a utf8 bytes data coming
-                                    from a server or client into its feilds we can use serde_json::to_value()
-                                    which maps an instance of a structure into a serde json value 
-                                    or serde_json::json!({}) to create a json value from those fields 
-                                    that we want to return them, but if we want to mutate data in rust we 
-                                    have to convert the json value or received bytes into the structure, 
-                                */
-                                Some(
-                                    serde_json::json!({
-                                        "id": col.id,
-                                        "contract_address": col.contract_address,
-                                        "col_name": col.col_name,
-                                        "symbol": col.symbol,
-                                        "owner_screen_cid": col.owner_screen_cid,
-                                        "metadata_updatable": col.metadata_updatable,
-                                        "freeze_metadata": col.freeze_metadata,
-                                        "base_uri": col.base_uri,
-                                        "royalties_share": col.royalties_share,
-                                        "royalties_address_screen_cid": col.royalties_address_screen_cid,
-                                        "collection_background": col.collection_background,
-                                        "extra": col.extra,
-                                        "col_description": col.col_description,
-                                        "contract_tx_hash": col.contract_tx_hash,
-                                        "created_at": col.created_at,
-                                        "updated_at": col.updated_at,
-                                    })
-                                )
-                        } else{
-                            None
-                        }
-                    })
-                    .collect::<Vec<Option<serde_json::Value>>>();
-                
-                found_collections.extend(match_collections);
-                found_collections.retain(|col| col.is_some());
-
-                for collection in decoded_cols{
-                    
-                    let colnfts = collection.clone().nfts;
-                    let decoded_nfts = if colnfts.is_some(){
-                        serde_json::from_value::<Vec<UserNftData>>(colnfts.unwrap()).unwrap()
-                    } else{
-                        vec![]
+                    let mut found_collections = vec![];
+                    let mut found_nfts = vec![];
+        
+                    let get_all_collections = UserCollection::get_all(connection).await;
+                    let Ok(collections) = get_all_collections else{
+                        let err = get_all_collections.unwrap_err();
+                        return err;
                     };
-
-                    let match_nfts = decoded_nfts
+        
+        
+                    let match_collections = collections.clone()
                         .into_iter()
-                        .map(|nft| {
-                            if nft.is_minted.is_some() && nft.is_minted.unwrap() == true && 
-                            (
-                                nft.nft_name.contains(&query.q) ||
-                                nft.nft_description.contains(&query.q) ||
-                                nft.current_owner_screen_cid.contains(&query.q) ||
-                                nft.contract_address.contains(&query.q) ||
-                                nft.onchain_id.clone().unwrap().contains(&query.q) ||
-                                nft.tx_hash.clone().unwrap().contains(&query.q)
-                            ){
-                                Some(
-                                    NftColInfo{ 
-                                        col_data: UserCollectionDataGeneralInfo{
-                                            id: collection.id,
-                                            contract_address: collection.clone().contract_address,
-                                            col_name: collection.clone().col_name,
-                                            symbol: collection.clone().symbol,
-                                            owner_screen_cid: collection.clone().owner_screen_cid,
-                                            metadata_updatable: collection.clone().metadata_updatable,
-                                            freeze_metadata: collection.clone().freeze_metadata,
-                                            base_uri: collection.clone().base_uri,
-                                            royalties_share: collection.clone().royalties_share,
-                                            royalties_address_screen_cid: collection.clone().royalties_address_screen_cid,
-                                            collection_background: collection.clone().collection_background,
-                                            extra: collection.clone().extra,
-                                            col_description: collection.clone().col_description,
-                                            contract_tx_hash: collection.clone().contract_tx_hash,
-                                            created_at: collection.created_at.to_string(),
-                                            updated_at: collection.updated_at.to_string(),
-                                        }, 
-                                        nfts_data: nft 
-                                    }
-                                )
+                        .map(|col| {
+        
+                            if col.col_name.contains(&query.q) ||
+                                col.col_description.contains(&query.q) ||
+                                col.owner_screen_cid.contains(&query.q) || 
+                                col.contract_address.contains(&query.q) || 
+                                col.contract_tx_hash.clone().unwrap_or(String::from("")).contains(&query.q)
+                                {
+                                    /* -----------------------------------------------------------------
+                                        > in those case that we don't want to create a separate struct 
+                                        and allocate an instance of it to map a utf8 bytes data coming
+                                        from a server or client into its feilds we can use serde_json::to_value()
+                                        which maps an instance of a structure into a serde json value 
+                                        or serde_json::json!({}) to create a json value from those fields 
+                                        that we want to return them, but if we want to mutate data in rust we 
+                                        have to convert the json value or received bytes into the structure, 
+                                    */
+                                    Some(
+                                        serde_json::json!({
+                                            "id": col.id,
+                                            "contract_address": col.contract_address,
+                                            "col_name": col.col_name,
+                                            "symbol": col.symbol,
+                                            "owner_screen_cid": col.owner_screen_cid,
+                                            "metadata_updatable": col.metadata_updatable,
+                                            "freeze_metadata": col.freeze_metadata,
+                                            "base_uri": col.base_uri,
+                                            "royalties_share": col.royalties_share,
+                                            "royalties_address_screen_cid": col.royalties_address_screen_cid,
+                                            "collection_background": col.collection_background,
+                                            "extra": col.extra,
+                                            "col_description": col.col_description,
+                                            "contract_tx_hash": col.contract_tx_hash,
+                                            "created_at": col.created_at,
+                                            "updated_at": col.updated_at,
+                                        })
+                                    )
                             } else{
                                 None
                             }
                         })
-                        .collect::<Vec<Option<NftColInfo>>>();
+                        .collect::<Vec<Option<serde_json::Value>>>();
                     
-
-                    found_nfts.extend(match_nfts);
-                    found_nfts.retain(|nft| nft.is_some());
-
-                }
-
-            }
+                    found_collections.extend(match_collections);
+                    found_collections.retain(|col| col.is_some());
+        
+        
+                        let get_nfts = UserNft::get_all(connection).await;
+                        let Ok(all_nfts) = get_nfts else{
+                            let err = get_nfts.unwrap_err();
+                            return err;
+                        };
+        
+                        let match_nfts = all_nfts
+                            .into_iter()
+                            .map(|nft| {
+                                if nft.is_minted.is_some() && nft.is_minted.unwrap() == true && 
+                                (
+                                    nft.nft_name.contains(&query.q) ||
+                                    nft.nft_description.contains(&query.q) ||
+                                    nft.current_owner_screen_cid.contains(&query.q) ||
+                                    nft.contract_address.contains(&query.q) ||
+                                    nft.onchain_id.clone().unwrap().contains(&query.q) ||
+                                    nft.tx_hash.clone().unwrap().contains(&query.q)
+                                ){
+                                    Some(
+                                        NftColInfo{ 
+                                            col_data: {
+                                                
+                                                let collection = UserCollection::find_by_contract_address_none_async(&nft.clone().contract_address, connection).unwrap();
+                                                UserCollectionDataGeneralInfo{
+                                                    id: collection.id,
+                                                    contract_address: collection.clone().contract_address,
+                                                    col_name: collection.clone().col_name,
+                                                    symbol: collection.clone().symbol,
+                                                    owner_screen_cid: collection.clone().owner_screen_cid,
+                                                    metadata_updatable: collection.clone().metadata_updatable,
+                                                    freeze_metadata: collection.clone().freeze_metadata,
+                                                    base_uri: collection.clone().base_uri,
+                                                    royalties_share: collection.clone().royalties_share,
+                                                    royalties_address_screen_cid: collection.clone().royalties_address_screen_cid,
+                                                    collection_background: collection.clone().collection_background,
+                                                    extra: collection.clone().extra,
+                                                    col_description: collection.clone().col_description,
+                                                    contract_tx_hash: collection.clone().contract_tx_hash,
+                                                    created_at: collection.created_at.to_string(),
+                                                    updated_at: collection.updated_at.to_string(),
+                                                }
+                                            }, 
+                                            nfts_data: nft 
+                                        }
+                                    )
+                                } else{
+                                    None
+                                }
+                            })
+                            .collect::<Vec<Option<NftColInfo>>>();
+                        
+        
+            found_nfts.extend(match_nfts);
+            found_nfts.retain(|nft| nft.is_some());
 
             /* order based on newest ones */
             found_nfts.sort_by(|n1, n2|{
