@@ -25,7 +25,7 @@ is a crypto based social network platform leveraging the **Polygon** blockchain 
 
 - the most secure logic for authentication process with **JWT** per device and **secp256k1** per each user for API signing.
 
-- buying, receiving and selling in-app **$TOKEN** using **Stripe** payment gateway and minting **NFT** gift cards.
+- buying, receiving and selling in-app **$TOKEN** using **Stripe** payment gateway and minting **NFT** gift cards with an smart treasury tracking service.
 
 - creating multiple private galleries to create, mint and transfer **NFTs** in various art work collections by inviting friends.
 

@@ -2221,7 +2221,7 @@ impl UserNft{
     */
     pub async fn buy_nft(mut buy_nft_request: UpdateUserNftRequest, redis_client: redis::Client,
         redis_actor: Addr<RedisActor>,
-        connection: &mut DbPoolConnection) 
+        connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
         -> Result<UserNftData, PanelHttpResponse>{
 
         
@@ -2257,10 +2257,10 @@ impl UserNft{
             };
 
             /* if the onchain id wasn't found we simply terminate the caller */
-            if nft_data.is_minted.is_none() || 
-                (nft_data.is_minted.is_some() && nft_data.is_minted.unwrap() == false) &&  
-                nft_data.onchain_id.is_none() || 
-                (nft_data.onchain_id.is_some() && nft_data.onchain_id.unwrap().is_empty()){
+            if nft_data.clone().is_minted.is_none() || 
+                (nft_data.clone().is_minted.is_some() && nft_data.clone().is_minted.unwrap() == false) &&  
+                nft_data.clone().onchain_id.is_none() || 
+                (nft_data.clone().onchain_id.is_some() && nft_data.clone().onchain_id.unwrap().is_empty()){
 
                 let resp = Response::<'_, &[u8]>{
                     data: Some(&[]),
@@ -2276,8 +2276,9 @@ impl UserNft{
 
             if nft_data.is_listed.is_some() && nft_data.is_listed.unwrap() == true{
 
+                
                 if buy_nft_request.buyer_screen_cid.is_some(){
-
+                    
                     let buyer_screen_cid = buy_nft_request.buyer_screen_cid.clone().unwrap();
                     let current_nft_owner_screen_cid = buy_nft_request.current_owner_screen_cid.clone();
 
@@ -2383,26 +2384,26 @@ impl UserNft{
 
                     let pay_to_seller = (nft_price - royalty_amount.round()) as i64;
 
+                    let lock_ids = NFT_BUY_LOCK.clone();
+                    let (tx, mut rx) = tokio::sync::mpsc::channel::<bool>(1024);
+                    // first spawn acquire the lock to push the product id
+                    tokio::spawn(
+                        {
+                            let nft_data = nft_data.clone();
+                            let tx = tx.clone();
+                            let lock_ids = lock_ids.clone();
+                            async move{
+                                let mut write_lock = lock_ids.lock().await;
+                                if (*write_lock).contains(&nft_data.id){
+                                    // reject the request
+                                    tx.send(true).await;
+                                } else{
+                                    (*write_lock).push(nft_data.id); // save the id for later readers to reject their request during the minting process
+                                }
 
-                    let rwlock_ids = NFT_MINT_LOCK.clone();
-                    let read_lock = rwlock_ids.read().await;
-                    if (*read_lock).contains(&nft_data.id){
-                        let resp = Response::<'_, &[u8]>{
-                            data: Some(&[]),
-                            message: &format!("NFT Is Being Bought By Another User"),
-                            status: 406,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::NotAcceptable().json(resp))
-                        ); 
-                    }
-                    
-                    drop(read_lock);
-
-                    let mut write_lock = rwlock_ids.try_write().unwrap();
-                    (*write_lock).push(nft_data.id);
-
+                            }
+                        }
+                    );
 
                     /* distribute shares */
                     let get_updated_user = Self::distributed_shares(
@@ -2419,8 +2420,11 @@ impl UserNft{
                     ).await;
                     let Ok(updated_user) = get_updated_user else{
 
-                        // release the lock on this error
-                        (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                        let lock_ids = lock_ids.clone();
+                        tokio::spawn(async move{
+                            let mut write_lock = lock_ids.lock().await;
+                            (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                        });
 
                         let err_resp = get_updated_user.unwrap_err();
                         return Err(err_resp);
@@ -2431,115 +2435,155 @@ impl UserNft{
                     /* ------- transferring the ownership of the nft ------- */
                     /* ----------------------------------------------------- */
                     // note that this can only be done once after nft minting
-                    let (new_tx_hash, status) = 
-                        nftport::transfer_nft(
-                            redis_client.clone(), 
-                            buy_nft_request.clone()
-                        ).await;
 
-                    // if anything went wrong we simpley revert the shares
-                    if status == 1{
+                    let cloned_redis_client = redis_client.clone();
+                    let cloned_buy_nft_request = buy_nft_request.clone();
+                    let (resptran_sender, mut resptran_receiver) = tokio::sync::mpsc::channel::<(String, u8)>(1024);
+                    let tran_task = tokio::spawn(async move{
+                        
+                        let (new_tx_hash, status) = 
+                            nftport::transfer_nft(
+                                cloned_redis_client.clone(), 
+                                cloned_buy_nft_request.clone()
+                            ).await;
+                        
+                        resptran_sender.send((new_tx_hash, status)).await;
 
-                        // release the lock on this error
-                        (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                    });
 
-                        /* revert shares */
-                        let get_updated_user = Self::revert_shares(
-                            User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap(),
-                            User::find_by_screen_cid(&seller, connection).await.unwrap(),
-                            User::find_by_screen_cid(&royalty_owner, connection).await.unwrap(),
-                            buy_nft_request.amount,
-                            nft_price as i64,
-                            pay_to_seller as i64,
-                            royalty_amount as i64,
-                            redis_actor,
-                            redis_client.clone(),
-                            connection
-                        ).await;
-                        let Ok(updated_user) = get_updated_user else{
-    
-                            let err_resp = get_updated_user.unwrap_err();
-                            return Err(err_resp);
-                        };
 
-                        let resp = Response::<'_, &[u8]>{
-                            data: Some(&[]),
-                            message: CANT_TRANSFER_NFT, /* maybe: can't transfer nft more than once */
-                            status: 417,
-                            is_error: true
-                        };
-                        return Err(
-                            Ok(HttpResponse::ExpectationFailed().json(resp))
-                        );
+                    tokio::select!{
+                        Some(flag) = rx.recv() => {
+                            let resp = Response::<'_, &[u8]>{
+                                data: Some(&[]),
+                                message: &format!("NFT Is Being Bought By Another User"),
+                                status: 406,
+                                is_error: true
+                            };
+                            return Err(
+                                Ok(HttpResponse::NotAcceptable().json(resp))
+                            ); 
+                        },
+                        _ = tran_task => {
 
-                    }
+                            let mut get_tx_hash = String::from("");
+                            let mut get_status = 0;
+                            while let Some((new_tx_hash, status)) = resptran_receiver.recv().await{
+                                get_tx_hash = new_tx_hash;
+                                get_status = status;
+                            }
 
-                    // updating nft fields with new onchain data
-                    buy_nft_request.tx_hash = Some(new_tx_hash);
-                    buy_nft_request.current_owner_screen_cid = buyer_screen_cid;
-                    buy_nft_request.is_listed = Some(false);
-                    buy_nft_request.current_price = Some(0);
-
-                    // release the lock after transferring
-                    // (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
-
-                    match Self::update_nft(
-                        buy_nft_request.clone(), 
-                        redis_client.clone(),
-                        redis_actor.clone(),
-                        connection).await{
-
-                            Ok(updated_user_nft_data) => {
-
-                                let get_nft_owner = User::find_by_screen_cid(&nft_data.current_owner_screen_cid, connection).await;
-                                let Ok(nft_owner) = get_nft_owner else{
-                                    let err_resp = get_nft_owner.unwrap_err();
+                            // if anything went wrong we simpley revert the shares
+                            if get_status == 1{
+        
+                                let lock_ids = lock_ids.clone();
+                                tokio::spawn(async move{
+                                    let mut write_lock = lock_ids.lock().await;
+                                    (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                                });
+        
+                                /* revert shares */
+                                let get_updated_user = Self::revert_shares(
+                                    User::find_by_screen_cid(&caller_screen_cid, connection).await.unwrap(),
+                                    User::find_by_screen_cid(&seller, connection).await.unwrap(),
+                                    User::find_by_screen_cid(&royalty_owner, connection).await.unwrap(),
+                                    buy_nft_request.amount,
+                                    nft_price as i64,
+                                    pay_to_seller as i64,
+                                    royalty_amount as i64,
+                                    redis_actor,
+                                    redis_client.clone(),
+                                    connection
+                                ).await;
+                                let Ok(updated_user) = get_updated_user else{
+        
+                                    let err_resp = get_updated_user.unwrap_err();
                                     return Err(err_resp);
                                 };
+        
+                                let resp = Response::<'_, &[u8]>{
+                                    data: Some(&[]),
+                                    message: CANT_TRANSFER_NFT, /* maybe: can't transfer nft more than once */
+                                    status: 417,
+                                    is_error: true
+                                };
+                                return Err(
+                                    Ok(HttpResponse::ExpectationFailed().json(resp))
+                                );
+        
+                            }
+        
+        
+                            // updating nft fields with new onchain data
+                            buy_nft_request.tx_hash = Some(get_tx_hash);
+                            buy_nft_request.current_owner_screen_cid = buyer_screen_cid;
+                            buy_nft_request.is_listed = Some(false);
+                            buy_nft_request.current_price = Some(0);
+        
+                            // release the lock after transferring
+                            // (*lock_ids).retain(|&nft_id| nft_id != nft_data.id);
+        
+                            match Self::update_nft(
+                                buy_nft_request.clone(), 
+                                redis_client.clone(),
+                                redis_actor.clone(),
+                                connection).await{
+        
+                                    Ok(updated_user_nft_data) => {
+        
+                                        let get_nft_owner = User::find_by_screen_cid(&nft_data.current_owner_screen_cid, connection).await;
+                                        let Ok(nft_owner) = get_nft_owner else{
+                                            let err_resp = get_nft_owner.unwrap_err();
+                                            return Err(err_resp);
+                                        };
+        
+                                        /** -------------------------------------------------------------------- */
+                                        /** ----------------- publish new event data to `on_user_action` channel */
+                                        /** -------------------------------------------------------------------- */
+                                        // if the actioner is the user himself we'll notify user with something like:
+                                        // u've just done that action!
+                                        let actioner_wallet_info = UserWalletInfoResponse{
+                                            username: user.clone().username,
+                                            avatar: user.clone().avatar,
+                                            bio: user.clone().bio,
+                                            banner: user.clone().banner,
+                                            mail: user.clone().mail,
+                                            screen_cid: user.clone().screen_cid,
+                                            extra: user.clone().extra,
+                                            stars: user.clone().stars,
+                                            created_at: user.clone().created_at.to_string(),
+                                        };
+                                        let user_wallet_info = UserWalletInfoResponse{
+                                            username: nft_owner.username,
+                                            avatar: nft_owner.avatar,
+                                            bio: nft_owner.bio,
+                                            banner: nft_owner.banner,
+                                            mail: nft_owner.mail,
+                                            screen_cid: nft_owner.screen_cid,
+                                            extra: nft_owner.extra,
+                                            stars: nft_owner.stars,
+                                            created_at: nft_owner.created_at.to_string(),
+                                        };
+                                        let user_notif_info = SingleUserNotif{
+                                            wallet_info: user_wallet_info,
+                                            notif: NotifData{
+                                                actioner_wallet_info,
+                                                fired_at: Some(chrono::Local::now().timestamp()),
+                                                action_type: ActionType::BuyNft,
+                                                action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
+                                            }
+                                        };
+                                        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                                        events::publishers::user::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+        
+                                        Ok(updated_user_nft_data)
+                                    },
+                                    Err(err) => Err(err)
+                                }
 
-                                /** -------------------------------------------------------------------- */
-                                /** ----------------- publish new event data to `on_user_action` channel */
-                                /** -------------------------------------------------------------------- */
-                                // if the actioner is the user himself we'll notify user with something like:
-                                // u've just done that action!
-                                let actioner_wallet_info = UserWalletInfoResponse{
-                                    username: user.clone().username,
-                                    avatar: user.clone().avatar,
-                                    bio: user.clone().bio,
-                                    banner: user.clone().banner,
-                                    mail: user.clone().mail,
-                                    screen_cid: user.clone().screen_cid,
-                                    extra: user.clone().extra,
-                                    stars: user.clone().stars,
-                                    created_at: user.clone().created_at.to_string(),
-                                };
-                                let user_wallet_info = UserWalletInfoResponse{
-                                    username: nft_owner.username,
-                                    avatar: nft_owner.avatar,
-                                    bio: nft_owner.bio,
-                                    banner: nft_owner.banner,
-                                    mail: nft_owner.mail,
-                                    screen_cid: nft_owner.screen_cid,
-                                    extra: nft_owner.extra,
-                                    stars: nft_owner.stars,
-                                    created_at: nft_owner.created_at.to_string(),
-                                };
-                                let user_notif_info = SingleUserNotif{
-                                    wallet_info: user_wallet_info,
-                                    notif: NotifData{
-                                        actioner_wallet_info,
-                                        fired_at: Some(chrono::Local::now().timestamp()),
-                                        action_type: ActionType::BuyNft,
-                                        action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
-                                    }
-                                };
-                                let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                                events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
 
-                                Ok(updated_user_nft_data)
-                            },
-                            Err(err) => Err(err)
                         }
+                    }
                     
                 } else{
                     
@@ -2834,151 +2878,185 @@ impl UserNft{
 
                 }
 
-                /*      ---------------------------------------------------------------------------------
-                            handling atomic synchronisation and mutual exclusion state of minting nft
-                        ---------------------------------------------------------------------------------
-                    client1 send mint request app proceeds with the client1 request it processes it take 30 seconds 
-                    to respond the caller meanwhile client2 sends the mint request for the same item we should reject 
-                    his request cause we have an ingoing process we must reject his request with "another user is 
-                    minting this".
-                    mutex block the caller even if it has requested for reading operation it blocks until the lock gets 
-                    released by the process which is usally happens at the end of the process lifetime (all types owned 
-                    by the method gets freed) but rwlock on the other hand allows reader to read but one of them mutate 
-                    the state at the same time, so i would prefer std::sync::Mutex over tokio::sync::Mutex in this case!
-                    we need to store nft ids in a vector during minting process and remove them once the minting process
-                    gets ended, storing them need to be in a global like type cause here it's not like python and since
-                    we don't have such thing as global type in Rust we should define a type as an static arc mutex to 
-                    store all nft ids during the app execution, the mutex is responsible for mutating the type in other 
-                    threads safely cause we may want to push an id in a another thread without having race conditions.
-                */
-                let rwlock_ids = NFT_MINT_LOCK.clone(); // it can also be loaded from app data
-                let read_lock = rwlock_ids.read().await;
-                if (*read_lock).contains(&nft_data.id){
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: &format!("NFT Is Being Minted By Another User"),
-                        status: 406,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::NotAcceptable().json(resp))
-                    ); 
-                }
-                
-                drop(read_lock);
+                let lock_ids = NFT_MINT_LOCK.clone(); // it can also be loaded from app data
+                let (tx, mut rx) = tokio::sync::mpsc::channel::<bool>(1024);
+                // first spawn acquire the lock to push the product id
+                tokio::spawn(
+                    {
+                        let nft_data = nft_data.clone();
+                        let tx = tx.clone();
+                        let lock_ids = lock_ids.clone();
+                        async move{
+                            let mut write_lock = lock_ids.lock().await;
+                            if (*write_lock).contains(&nft_data.id){
+                                // reject the request
+                                tx.send(true).await;
+                            } else{
+                                (*write_lock).push(nft_data.id); // save the id for later readers to reject their request during the minting process
+                            }
 
-                let mut write_lock = rwlock_ids.try_write().unwrap();
-                (*write_lock).push(nft_data.id);
-
-                // start minting process, it takes approximately 30 seconds.
-                let (new_tx_hash, token_id, status) = 
-                    nftport::mint_nft(redis_client.clone(), mint_nft_request.clone()).await;
-
-                if status == 1{
-
-                    // release the lock on this error
-                    (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
-
-                    if uubd.is_some() && owner_uubd.is_some(){
-                        // if anything goes wrong payback the user
-                        let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
-                        let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-
-                        let new_balance = owner_uubd.unwrap().balance.unwrap() - nft_price;
-                        let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor, connection).await;
-    
+                        }
                     }
+                );
 
-                    let resp = Response::<'_, &[u8]>{
-                        data: Some(&[]),
-                        message: CANT_MINT_NFT,
-                        status: 417,
-                        is_error: true
-                    };
-                    return Err(
-                        Ok(HttpResponse::ExpectationFailed().json(resp))
-                    );
-                }
+                let cloned_redis_client = redis_client.clone();
+                let cloned_mint_nft_request = mint_nft_request.clone();
+                let (respmint_sender, mut respmint_receiver) = tokio::sync::mpsc::channel::<(String, String, u8)>(1024);
+                let mint_task = tokio::spawn(async move{
+                    let (new_tx_hash, token_id, status) = 
+                        nftport::mint_nft(
+                            cloned_redis_client.clone(), 
+                            cloned_mint_nft_request.clone()
+                        ).await;
+                    
+                    
+                    respmint_sender.send((new_tx_hash, token_id, status)).await;
 
-                mint_nft_request.is_minted = Some(true);
-                mint_nft_request.tx_hash = Some(new_tx_hash); /* updating tx hash with the latest onchain update */
-                mint_nft_request.onchain_id = Some(token_id);
-                mint_nft_request.current_owner_screen_cid = caller_screen_cid;
-                mint_nft_request.is_listed = Some(false);
-                mint_nft_request.current_price = Some(0);
+                });
 
-                // release the lock, return all ids except nft_data.id
-                // this gets released soon before minting an nft that's 
-                // why two client can mint at the same time cause there is
-                // no nft id in this vector during the minting process of the first client
-                // this must be located in a place right after that 30 seconds
-                // we'll pass it to mint function every async task are handled
-                // by the tokio runtime scheduler and the order of executing them 
-                // may not be like the order of their arrival or defenition.
-                // (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
 
-                match Self::update_nft(
-                    mint_nft_request.clone(),
-                    redis_client.clone(),
-                    redis_actor.clone(), 
-                    connection).await{
-                        Ok(updated_user_nft_data) => {
+                tokio::select!{
+                    Some(flag) = rx.recv() => {
+                        let resp = Response::<'_, &[u8]>{
+                            data: Some(&[]),
+                            message: &format!("NFT Is Being Minted By Another User"),
+                            status: 406,
+                            is_error: true
+                        };
+                        return Err(
+                            Ok(HttpResponse::NotAcceptable().json(resp))
+                        ); 
+                    },
+                    _ = mint_task => {
 
-                            /** -------------------------------------------------------------------- */
-                            /** ----------------- publish new event data to `on_user_action` channel */
-                            /** -------------------------------------------------------------------- */
-                            // if the actioner is the user himself we'll notify user with something like:
-                            // u've just done that action!
-                            let actioner_wallet_info = UserWalletInfoResponse{
-                                username: user.clone().username,
-                                avatar: user.clone().avatar,
-                                bio: user.clone().bio,
-                                banner: user.clone().banner,
-                                mail: user.clone().mail,
-                                screen_cid: user.clone().screen_cid,
-                                extra: user.clone().extra,
-                                stars: user.clone().stars,
-                                created_at: user.clone().created_at.to_string(),
-                            };
-                            let user_wallet_info = UserWalletInfoResponse{
-                                username: nft_owner.username,
-                                avatar: nft_owner.avatar,
-                                bio: nft_owner.bio,
-                                banner: nft_owner.banner,
-                                mail: nft_owner.mail,
-                                screen_cid: nft_owner.screen_cid,
-                                extra: nft_owner.extra,
-                                stars: nft_owner.stars,
-                                created_at: nft_owner.created_at.to_string(),
-                            };
-                            let user_notif_info = SingleUserNotif{
-                                wallet_info: user_wallet_info,
-                                notif: NotifData{
-                                    actioner_wallet_info,
-                                    fired_at: Some(chrono::Local::now().timestamp()),
-                                    action_type: ActionType::MintNft,
-                                    action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
-                                }
-                            };
-                            let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
-                            events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+                        let mut get_mint_tx_hash = String::from("");
+                        let mut get_token_id = String::from("");
+                        let mut get_status = 0;
+                        while let Some((new_tx_hash, token_id, status)) = respmint_receiver.recv().await{
+                            get_mint_tx_hash = new_tx_hash;
+                            get_token_id = token_id;
+                            get_status = status;
+                        }
 
-                            Ok(updated_user_nft_data)
+                        if get_status == 1{
 
-                        },
-                        Err(err) => {
-                            
+                            let lock_ids = lock_ids.clone();
+                            tokio::spawn(async move{
+                                let mut write_lock = lock_ids.lock().await;
+                                (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                            });
+
+
                             if uubd.is_some() && owner_uubd.is_some(){
                                 // if anything goes wrong payback the user
                                 let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
                                 let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
-        
+
                                 let new_balance = owner_uubd.unwrap().balance.unwrap() - nft_price;
                                 let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor, connection).await;
             
                             }
 
-                            Err(err)
+                            let resp = Response::<'_, &[u8]>{
+                                data: Some(&[]),
+                                message: CANT_MINT_NFT,
+                                status: 417,
+                                is_error: true
+                            };
+                            return Err(
+                                Ok(HttpResponse::ExpectationFailed().json(resp))
+                            );
+                        } else{
+
+                            let lock_ids = lock_ids.clone();
+                            tokio::spawn(async move{
+                                let mut write_lock = lock_ids.lock().await;
+                                (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+                            });
+
+                            mint_nft_request.is_minted = Some(true);
+                            mint_nft_request.tx_hash = Some(get_mint_tx_hash); /* updating tx hash with the latest onchain update */
+                            mint_nft_request.onchain_id = Some(get_token_id);
+                            mint_nft_request.current_owner_screen_cid = caller_screen_cid;
+                            mint_nft_request.is_listed = Some(false);
+                            mint_nft_request.current_price = Some(0);
+    
+                            // release the lock, return all ids except nft_data.id
+                            // this gets released soon before minting an nft that's 
+                            // why two client can mint at the same time cause there is
+                            // no nft id in this vector during the minting process of the first client
+                            // this must be located in a place right after that 30 seconds
+                            // we'll pass it to mint function every async task are handled
+                            // by the tokio runtime scheduler and the order of executing them 
+                            // may not be like the order of their arrival or defenition.
+                            // (*write_lock).retain(|&nft_id| nft_id != nft_data.id);
+    
+                            match Self::update_nft(
+                                mint_nft_request.clone(),
+                                redis_client.clone(),
+                                redis_actor.clone(), 
+                                connection).await{
+                                    Ok(updated_user_nft_data) => {
+    
+                                        /** -------------------------------------------------------------------- */
+                                        /** ----------------- publish new event data to `on_user_action` channel */
+                                        /** -------------------------------------------------------------------- */
+                                        // if the actioner is the user himself we'll notify user with something like:
+                                        // u've just done that action!
+                                        let actioner_wallet_info = UserWalletInfoResponse{
+                                            username: user.clone().username,
+                                            avatar: user.clone().avatar,
+                                            bio: user.clone().bio,
+                                            banner: user.clone().banner,
+                                            mail: user.clone().mail,
+                                            screen_cid: user.clone().screen_cid,
+                                            extra: user.clone().extra,
+                                            stars: user.clone().stars,
+                                            created_at: user.clone().created_at.to_string(),
+                                        };
+                                        let user_wallet_info = UserWalletInfoResponse{
+                                            username: nft_owner.username,
+                                            avatar: nft_owner.avatar,
+                                            bio: nft_owner.bio,
+                                            banner: nft_owner.banner,
+                                            mail: nft_owner.mail,
+                                            screen_cid: nft_owner.screen_cid,
+                                            extra: nft_owner.extra,
+                                            stars: nft_owner.stars,
+                                            created_at: nft_owner.created_at.to_string(),
+                                        };
+                                        let user_notif_info = SingleUserNotif{
+                                            wallet_info: user_wallet_info,
+                                            notif: NotifData{
+                                                actioner_wallet_info,
+                                                fired_at: Some(chrono::Local::now().timestamp()),
+                                                action_type: ActionType::MintNft,
+                                                action_data: serde_json::to_value(updated_user_nft_data.clone()).unwrap()
+                                            }
+                                        };
+                                        let stringified_user_notif_info = serde_json::to_string_pretty(&user_notif_info).unwrap();
+                                        events::publishers::action::emit(redis_actor.clone(), "on_user_action", &stringified_user_notif_info).await;
+    
+                                        Ok(updated_user_nft_data)
+    
+                                    },
+                                    Err(err) => {
+                                        
+                                        if uubd.is_some() && owner_uubd.is_some(){
+                                            // if anything goes wrong payback the user
+                                            let new_balance = uubd.unwrap().balance.unwrap() + (nft_price + mint_nft_request.amount);
+                                            let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await;
+                    
+                                            let new_balance = owner_uubd.unwrap().balance.unwrap() - nft_price;
+                                            let updated_owner_balance = User::update_balance(nft_owner.id, new_balance, redis_client.clone(), redis_actor, connection).await;
+                        
+                                        }
+    
+                                        Err(err)
+                                    }
+                                }
+                        }
+
                         }
                     }
 
