@@ -86,6 +86,7 @@ pub struct UserPrivateGalleryInfoDataInvited{
     pub created_at: String,
     pub updated_at: String,
     pub requested_at: i64,
+    pub is_accepted: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -843,6 +844,156 @@ impl UserPrivateGallery{
 
     }
 
+    pub async fn get_all_galleries_invited(caller_screen_cid: &str, mut redis_client: RedisClient,
+        limit: web::Query<Limit>, connection: &mut PooledConnection<ConnectionManager<PgConnection>>) 
+        -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
+
+        let from = limit.from.unwrap_or(0) as usize;
+        let to = limit.to.unwrap_or(10) as usize;
+
+        if to < from {
+            let resp = Response::<'_, &[u8]>{
+                data: Some(&[]),
+                message: INVALID_QUERY_LIMIT,
+                status: 406,
+                is_error: true
+            };
+            return Err(
+                Ok(HttpResponse::NotAcceptable().json(resp))
+            )
+        }
+
+         let get_user_fan = UserFan::get_user_fans_data_for(&caller_screen_cid, connection).await;
+        let Ok(mut user_fan_data) = get_user_fan else{
+            let resp_error = get_user_fan.unwrap_err();
+            return Err(resp_error);
+        };
+
+        let user_invitation_request_data = user_fan_data.construct_gallery_invitation_requests(connection);
+        let mut decoded_invitation_request_data = if user_invitation_request_data.is_some(){
+            serde_json::from_value::<Vec<InvitationRequestData>>(user_invitation_request_data.unwrap()).unwrap()
+        } else{
+            vec![]
+        };
+
+        let mut gals = decoded_invitation_request_data
+            .into_iter()
+            .map(|invrd|{
+    
+                let gal_id = invrd.gallery_id;
+                let gallery = Self::find_by_id_none_async(gal_id, redis_client.clone(), connection).unwrap();
+                Some(
+                    UserPrivateGalleryInfoDataInvited{
+                        id: gallery.id,
+                        owner_username: User::find_by_screen_cid_none_async(&gallery.owner_screen_cid, connection).unwrap().username,
+                        owner_screen_cid: gallery.owner_screen_cid,
+                        collections: {
+                            
+                            // ------------------------------------------------
+                            // get collection ids from redis for this gallery 
+                            // ------------------------------------------------
+                            let empty_vec_of_ids: Vec<i32> = vec![];
+                            let get_gal_collections: String = redis_client.get(gallery.id).unwrap_or(
+                                serde_json::to_string_pretty(&empty_vec_of_ids).unwrap()
+                            );
+                            let gal_collections = serde_json::from_str::<Vec<i32>>(&get_gal_collections).unwrap();
+                            let mut all_gal_collections = vec![];
+                            if !gal_collections.is_empty(){
+                                for col_id in gal_collections{
+                                    all_gal_collections.push(
+                                        UserCollection::find_by_id_none_async(col_id, connection).unwrap_or_default()
+                                    )
+                                }
+                            }
+
+                            all_gal_collections.len() as u64
+                        },
+                        gal_name: gallery.gal_name,
+                        gal_description: gallery.gal_description,
+                        invited_friends: {
+                            let g_invf = gallery.invited_friends;
+                            let mut invfs = if g_invf.is_some(){
+                                g_invf.unwrap()
+                            } else{
+                                vec![]
+                            };
+                            
+                            invfs.retain(|scid| scid.is_some());
+
+                            invfs
+                                .into_iter()
+                                .map(|scid|{
+                                    let user = User::find_by_screen_cid_none_async(&scid.unwrap(), connection).unwrap_or(User::default());
+                                    UserWalletInfoResponse{
+                                        username: user.username,
+                                        avatar: user.avatar,
+                                        bio: user.bio,
+                                        banner: user.banner,
+                                        mail: user.mail,
+                                        screen_cid: user.screen_cid,
+                                        extra: user.extra,
+                                        stars: user.stars,
+                                        created_at: user.created_at.to_string(),
+                                    }
+                                })
+                                .collect::<Vec<UserWalletInfoResponse>>()
+                            
+                        },
+                        extra: gallery.extra,
+                        gallery_background: gallery.gallery_background,
+                        created_at: gallery.created_at.to_string(),
+                        updated_at: gallery.updated_at.to_string(),
+                        requested_at: invrd.requested_at,
+                        is_accepted: invrd.is_accepted
+                    }
+                )
+
+            })
+            .collect::<Vec<Option<UserPrivateGalleryInfoDataInvited>>>();
+
+        gals.retain(|gal| gal.is_some());
+
+        /* sorting wallet data in desc order */
+        gals.sort_by(|g1, g2|{
+
+            let g1_default = UserPrivateGalleryInfoDataInvited::default();
+            let g2_default = UserPrivateGalleryInfoDataInvited::default();
+            let g1 = g1.as_ref().unwrap_or(&g1_default);
+            let g2 = g2.as_ref().unwrap_or(&g2_default);
+
+            let g1_created_at = NaiveDateTime
+                ::parse_from_str(&g1.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            let g2_created_at = NaiveDateTime
+                ::parse_from_str(&g2.created_at, "%Y-%m-%d %H:%M:%S%.f")
+                .unwrap();
+
+            g2_created_at.cmp(&g1_created_at)
+
+        });
+
+        gals.retain(|upgig| upgig.is_some());
+
+        let sliced = if from < gals.len(){
+            if gals.len() > to{
+                let data = &gals[from..to+1];
+                data.to_vec()
+            } else{
+                let data = &gals[from..gals.len()];
+                data.to_vec()
+            }
+        } else{
+            vec![]
+        };
+        
+
+        Ok(
+            sliced   
+        )
+
+    }
+
     pub async fn get_all_galleries_invited_to(caller_screen_cid: &str, mut redis_client: RedisClient,
         limit: web::Query<Limit>, connection: &mut DbPoolConnection) 
         -> Result<Vec<Option<UserPrivateGalleryInfoDataInvited>>, PanelHttpResponse>{
@@ -944,7 +1095,8 @@ impl UserPrivateGallery{
                             gallery_background: gallery.gallery_background,
                             created_at: gallery.created_at.to_string(),
                             updated_at: gallery.updated_at.to_string(),
-                            requested_at: invrd.requested_at
+                            requested_at: invrd.requested_at,
+                            is_accepted: invrd.is_accepted,
                         }
                     )
                 } else{
@@ -1083,7 +1235,8 @@ impl UserPrivateGallery{
                             gallery_background: gallery.gallery_background,
                             created_at: gallery.created_at.to_string(),
                             updated_at: gallery.updated_at.to_string(),
-                            requested_at: invrd.requested_at
+                            requested_at: invrd.requested_at,
+                            is_accepted: invrd.is_accepted
                         }
                     )
                 } else{
