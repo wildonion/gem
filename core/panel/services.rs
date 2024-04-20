@@ -105,6 +105,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::x::exports::verify_twitter_account);
     config.service(apis::user::task::exports::tasks_report);
     config.service(apis::user::wallet::exports::make_cid);
+    config.service(apis::user::wallet::exports::get_my_wallet_info);
     config.service(apis::user::wallet::exports::deposit);
     config.service(apis::user::wallet::exports::withdraw);
     config.service(apis::user::wallet::exports::get_all_user_withdrawals);
