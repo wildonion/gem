@@ -2,7 +2,7 @@
 
 <img src="https://github.com/wildonion/gem/blob/master/assets/conse.png" width="150"/>
 
-is a crypto based social network platform leveraging the **Polygon** blockchain empowering lovers to build and take participate in social events (see [zoomate](https://github.com/wildonion/zoomate)) with their NFT artworks
+is a crypto based social network platform leveraging the **Polygon** blockchain empowering lovers to build and take participate in social events (see [hoopoe](https://github.com/wildonion/hoopoe)) with their NFT artworks
 
 ### 🍔 Features
 
@@ -13,7 +13,7 @@ is a crypto based social network platform leveraging the **Polygon** blockchain 
 - actor based pubsub push notification strategies to notify different parts of the app clearly the user, on every db updates using redis pubsub pattern ([more](https://github.com/wildonion/gem/wiki/Realtime-Push-Notification-Strategy)).
 - **SSE** technology to inform clients by receiving automatic updates from the server via an HTTP connection.
  
-- zoomate [hoopoe](https://github.com/wildonion/zoomate/tree/main/hoopoe) a platform for social events 
+- [hoopoe](https://github.com/wildonion/hoopoe) a platform for social events 
 
 - an event managing and reservation system with reveal-participant-role functionality
 
