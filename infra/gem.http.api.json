@@ -2463,6 +2463,64 @@
 							"response": []
 						},
 						{
+							"name": "Airdrop Tokens",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_id\": 1,\n    \"amount\": 10\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/airdrop",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"airdrop"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update User Balance",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_id\": 1,\n    \"new_balance\": 10\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{panel-admin}}/update-user-balance",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"update-user-balance"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get Chatroom Launchpad",
 							"request": {
 								"auth": {
@@ -2577,7 +2635,7 @@
 									"bearer": [
 										{
 											"key": "token",
-											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTY5NzgwNDAxNzMyNDkwOTAwMCwiZXhwIjoxNzAwMzk2MDE3LCJpYXQiOjE2OTc4MDQwMTd9.AHoyTCH4l3pbgaPjGwlfnxRuJNteOhpxiGu_NZLEQzQoJNi3Q4_z-rO6dL4gfpGP_qzuNGSopCZWvwuXxJvTXw",
+											"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjIsInVzZXJfcm9sZSI6IkFkbWluIiwidG9rZW5fdGltZSI6MTcxNDc2MTk4NTMwMDQzNjg2NywiaXNfcmVmcmVzaCI6ZmFsc2UsImV4cCI6MTgxNDY0MDM4NSwiaWF0IjoxNzE0NzYxOTg1fQ.FoxYgCJv8flaNCkKLjmlnPzb5sIAP5KcxLolf0vFcyYtL9tkihSHyE6TXGtvxV5G0N5uwTKqrGS_alHZZc8RLA",
 											"type": "string"
 										}
 									]
@@ -2821,6 +2879,28 @@
 											"key": "to",
 											"value": "10"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All System Treasuries",
+							"request": {
+								"auth": {
+									"type": "bearer"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{panel-admin}}/treasury/get/all",
+									"host": [
+										"{{panel-admin}}"
+									],
+									"path": [
+										"treasury",
+										"get",
+										"all"
 									]
 								}
 							},
@@ -3847,6 +3927,37 @@
 													"key": "to",
 													"value": "10"
 												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Get User Treasuries",
+									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjMsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzAzNDEwMjYwMjQ4ODY5MDAwLCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxNzAzNDEyMDYwMjU2NzA5MDAwLCJpYXQiOjE3MDM0MTAyNjAyNTY3MDkwMDB9.2pXPW38ZElZ3_O8PRnZiKXlpQ3wT3IOEgk4c4Jwe-vDp74iEuR2_gG3WPswpjExZeVqBuov3m57Il5WvXw7GKg",
+													"type": "string"
+												}
+											]
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{panel-user}}/user/get/all/treasury/1",
+											"host": [
+												"{{panel-user}}"
+											],
+											"path": [
+												"user",
+												"get",
+												"all",
+												"treasury",
+												"1"
 											]
 										}
 									},
@@ -5323,7 +5434,7 @@
 											"bearer": [
 												{
 													"key": "token",
-													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNjk4OTQ0MTkzOTY0NDk3MDAwLCJleHAiOjE3MDE1MzYxOTMsImlhdCI6MTY5ODk0NDE5M30.iBkTQULfNdG0PSV8_Vcd9tWixitQ60N00hDVFVGJGrGrs49sOWhAUGfTcw5vGDfs8Ccs3K184khWBkFXc1vgrw",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJfaWQiOjQsInVzZXJfcm9sZSI6IlVzZXIiLCJ0b2tlbl90aW1lIjoxNzEyNDIzMjI5NTI2MTI3ODM3LCJpc19yZWZyZXNoIjpmYWxzZSwiZXhwIjoxODEyMzAxNjI5LCJpYXQiOjE3MTI0MjMyMjl9.hEJvgZ5ikKYfHk7cQ4LCnjOESzfzsDBiHDZ57bY_gCDasnUpZCru4O94lhT42O-D86bQIxCcCTA7e68doU474Q",
 													"type": "string"
 												}
 											]
@@ -5332,7 +5443,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"caller_cid\": \"036d9abb5d293af3312779e7812c962b4e175028d16aa8c9392e61ef7d2e5cb28e\",\n    \"amount\": 2,\n    \"col_id\": 1,\n    \"contract_address\": \"0x31A72ae35138A34BB1c3522d2aC8FFaC1a37EA8D\",\n    \"current_owner_screen_cid\": \"0x2778bc6e7afd6e62feb3a5b3bda65bedff96ca3b\",\n    \"nft_name\": \"DeadKing01\",\n    \"nft_description\": \"first nft of a dead king\",\n    \"current_price\": 15,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ], // must fill this \n    \"tx_signature\": \"\",\n    \"hash_data\": \"\"\n}",
+											"raw": "{\n    \"caller_cid\": \"0343a3ca973f26ccb8787c22b0a85dbbe80e43b518c8fd12121a0db9b19cfd0567\",\n    \"amount\": 160,\n    \"col_id\": 1,\n    \"contract_address\": \"0x3Ea3794FBAFC7e36604E04C2a5c092bd8187D8F5\",\n    \"current_owner_screen_cid\": \"0x878707554562ecad48c561fe6d775b80c1bf5243\",\n    \"nft_name\": \"Desert In Mars\",\n    \"nft_description\": \"Enter the world of new cool high-quality 8K iPhone 15 wallpapers, where every pixel tells a story of precision and clarity.\",\n    \"current_price\": 100,\n    \"extra\": null,\n    \"attributes\": [\n        {\n            \"trait_type\": \"Background\", \n            \"value\": \"Clean\"\n        }, \n        {\n            \"trait_type\": \"Type\", \n            \"value\": \"Rare\"\n        }, \n        {\n            \"trait_type\": \"Packaging\", \n            \"value\": \"Clean\"\n        },\n        {\n            \"trait_type\": \"Personality\", \n            \"value\": \"OG\"\n        }\n    ], // must fill this \n    \"tx_signature\": \"0ffd4c61ebb1b6f14767276c1f18f1e425d08fda62bb23a431decd5260b5e4352a1f4e3fde7754995dd3f3ea89335d8ae87ad7a8faac8e477adfac372ca944431b\",\n    \"hash_data\": \"b48d38f93eaa084033fc5970bf96e559c33c4cdc07d889ab00b4d63f9590739d\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"

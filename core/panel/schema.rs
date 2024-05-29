@@ -41,6 +41,29 @@ diesel::table! {
 }
 
 diesel::table! {
+    sys_treasury (id) {
+        id -> Int4,
+        airdrop -> Int8,
+        debit -> Int8,
+        paid_to -> Int4,
+        current_networth -> Int8,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    user_treasury (id) {
+        id -> Int4,
+        user_id -> Int4,
+        done_at -> Int8,
+        amount -> Int8,
+        tx_type -> Text,
+        treasury_type -> Text,
+    }
+}
+
+diesel::table! {
     galleries_invitation_requests (id) {
         id -> Int4,
         invitee_id -> Int4,
@@ -351,6 +374,8 @@ diesel::joinable!(users_tasks -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     clp_events,
+    sys_treasury,
+    user_treasury,
     galleries_invitation_requests,
     nfts_comments,
     nfts_likes,

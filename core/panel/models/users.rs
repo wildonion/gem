@@ -10,6 +10,7 @@ use borsh::{BorshSerialize, BorshDeserialize};
 use chrono::Timelike;
 use futures_util::TryStreamExt;
 use lettre::message::Mailbox;
+use models::sys_treasury::SysTreasury;
 use crate::*;
 use crate::helpers::misc::{Response, gen_random_chars, gen_random_idx, gen_random_number, get_ip_data, Limit, gen_random_chars_0_255};
 use crate::models::users_galleries::{UserPrivateGallery, NewUserPrivateGalleryRequest};
@@ -3546,9 +3547,12 @@ impl User{
 
     }
 
-    pub async fn update_balance(owner_id: i32, new_balance: i64, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
+    pub async fn update_balance(owner_id: i32, tx_type: &str, treasury_type: &str,
+        new_balance: i64, redis_client: RedisClient, redis_actor: Addr<RedisActor>,
         connection: &mut DbPoolConnection) 
         -> Result<UserData, PanelHttpResponse>{
+
+        let mut redis_conn = redis_client.get_async_connection().await.unwrap();
 
         let Ok(user) = User::find_by_id(owner_id, connection).await else{
             let resp = Response{
@@ -3574,9 +3578,109 @@ impl User{
             );
         }
 
+        // ========================================================================
+        // ======================== system treasury calculations ==================
+        // ========================================================================
+        use crate::models::sys_treasury::SysTreasuryRequest;
+        use crate::schema::sys_treasury::dsl::sys_treasury;
+
+        // insert into sys_treasury 1 % of the tx 
+        // new balance is the updated new balance considered by 1 %
+        let is_key_there: bool = redis_conn.exists("sys_treasury").await.unwrap();
+        
+        let (sys_treasury_, pure_balance) = if tx_type.starts_with("Airdrop") {
+            let mut splitted_tx_type = tx_type.split("|");
+            let invar = splitted_tx_type.next().unwrap();
+            let unvar = splitted_tx_type.next().unwrap();
+            (SysTreasuryRequest{
+                airdrop: unvar.parse::<i64>().unwrap(),
+                debit: unvar.parse::<i64>().unwrap(),
+                paid_to: owner_id,
+                current_networth: if is_key_there{
+                    let get_sys_trs_instance: String = redis_conn.get("sys_treasury").await.unwrap();
+                    let mut sys_trs_instance = serde_json::from_str::<SysTreasuryRequest>(&get_sys_trs_instance).unwrap();
+                    sys_trs_instance.current_networth -= unvar.parse::<i64>().unwrap();
+                    sys_trs_instance.current_networth
+                } else{
+                    0 - unvar.parse::<i64>().unwrap()
+                }
+            }, new_balance)
+        } else if tx_type.starts_with("Error"){
+            
+            (
+                SysTreasuryRequest{
+                    airdrop: 0,
+                    debit: 0,
+                    paid_to: owner_id,
+                    current_networth: if is_key_there{
+                        let get_sys_trs_instance: String = redis_conn.get("sys_treasury").await.unwrap();
+                        let mut sys_trs_instance = serde_json::from_str::<SysTreasuryRequest>(&get_sys_trs_instance).unwrap();
+                        sys_trs_instance.current_networth
+                    } else{
+                        0
+                    }
+                },
+                new_balance
+            )
+
+        } else{
+            let nb = new_balance as f64;
+            let percent = percentage::Percentage::from_decimal(1.0);
+            let profit = percent.apply_to(nb);
+            let pure_balance = (nb - profit.round()) as i64;
+            
+            let sys_treasury_ = SysTreasuryRequest{
+                airdrop: 0,
+                debit: 0,
+                paid_to: owner_id,
+                current_networth: if is_key_there{
+                    let get_sys_trs_instance: String = redis_conn.get("sys_treasury").await.unwrap();
+                    let mut sys_trs_instance = serde_json::from_str::<SysTreasuryRequest>(&get_sys_trs_instance).unwrap();
+                    sys_trs_instance.current_networth += profit.round() as i64;
+                    sys_trs_instance.current_networth
+                } else{
+                    profit.round() as i64
+                }
+            };
+            (sys_treasury_, pure_balance)
+        };
+
+
+        let new_sys_instance_stringified = serde_json::to_string(&sys_treasury_).unwrap();
+        let _: () = redis_conn.set("sys_treasury", &new_sys_instance_stringified).await.unwrap();
+
+        diesel::insert_into(sys_treasury)
+            .values(&sys_treasury_)
+            .returning(SysTreasury::as_returning())
+            .get_result::<SysTreasury>(connection);
+        // ========================================================================
+        // ========================================================================
+        // ========================================================================
+
+
+        // ======================================================================
+        // ======================== user treasury calculations ==================
+        // ======================================================================
+        use crate::models::user_treasury::{UserTreasuryRequest, UserTreasury};
+        use crate::schema::user_treasury::dsl::user_treasury;
+        let user_treasury_ = UserTreasuryRequest{
+            user_id: owner_id,
+            done_at: chrono::Local::now().timestamp(),
+            amount: pure_balance,
+            tx_type: tx_type.to_string(),
+            treasury_type: treasury_type.to_string(),
+        };
+        diesel::insert_into(user_treasury)
+            .values(&user_treasury_)
+            .returning(UserTreasury::as_returning())
+            .get_result::<UserTreasury>(connection);
+
+        // ======================================================================
+        // ======================================================================
+        // ======================================================================
 
         match diesel::update(users.find(user.id))
-            .set(balance.eq(new_balance))
+            .set(balance.eq(pure_balance))
             .returning(FetchUser::as_returning())
             .get_result(connection)
             {
@@ -5403,7 +5507,8 @@ impl Id{
                     events::publishers::user::emit(redis_actor.clone(), "on_user_update", &json_stringified_updated_user).await;
 
                     let new_balance = if user.balance.is_none(){5} else{user.balance.unwrap() + 5};
-                    match User::update_balance(self.user_id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
+                    match User::update_balance(self.user_id, "Airdrop|5", "credit",
+                        new_balance, redis_client.clone(), redis_actor.clone(), connection).await{
 
                         Ok(updated_user_data) => {
 

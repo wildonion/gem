@@ -2566,11 +2566,11 @@ impl UserFan{
             // update balance of the one who accepted the request
             // cause he must pay for the entry price of the gallery
             let new_balance = user.balance.unwrap() - g_entry_price;
-            updated_user_balance = Some(User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+            updated_user_balance = Some(User::update_balance(user.id, "EnterPrivateGallery", "Debit", new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
     
             // update balance of the owner
             let new_owner_balance = owner.balance.unwrap() + g_entry_price;
-            updated_owner_balance = Some(User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
+            updated_owner_balance = Some(User::update_balance(owner.id, "EnterPrivateGallery", "Credit", new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap());
 
             invited_friends.push(Some(caller_screen_cid.to_string()));
         }
@@ -2606,11 +2606,11 @@ impl UserFan{
                     if updated_user_balance.is_some() && updated_owner_balance.is_some(){
                         // revert the payment process, pay the gallery price back the user 
                         let new_balance = updated_user_balance.unwrap().balance.unwrap() + g_entry_price;
-                        let updated_user_balance = User::update_balance(user.id, new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                        let updated_user_balance = User::update_balance(user.id, "ErrorEnterPrivateGallery", "Credit", new_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
                         
                         // charge the owner for the gallery price
                         let new_owner_balance = updated_owner_balance.unwrap().balance.unwrap() - g_entry_price;
-                        let updated_owner_balance = User::update_balance(owner.id, new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
+                        let updated_owner_balance = User::update_balance(owner.id, "ErrorEnterPrivateGallery", "Debit", new_owner_balance, redis_client.clone(), redis_actor.clone(), connection).await.unwrap();
                     }
                     
                     return Err(resp)

@@ -84,7 +84,9 @@ pub fn init_admin(config: &mut web::ServiceConfig){
     config.service(apis::admin::mail::exports::send_mail);
     config.service(apis::admin::ticket::exports::get_all);
     config.service(apis::admin::token::exports::get_all);
-
+    config.service(apis::admin::get_all_system_treasuries);
+    config.service(apis::admin::airdrop);
+    config.service(apis::admin::update_user_balance);
 
 }
 
@@ -182,6 +184,7 @@ pub fn init_user(config: &mut web::ServiceConfig){
     config.service(apis::user::gallery::exports::update_collection);
     config.service(apis::user::gallery::exports::upload_collection_banner);
     config.service(apis::user::gallery::exports::get_nfts_owned_by);
+    config.service(apis::user::get_all_user_treasuries);
 }
 
 /*

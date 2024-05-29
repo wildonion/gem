@@ -106,7 +106,7 @@ impl UserClp{
                     };
 
                     let new_balance = user.balance.unwrap() + user_clp_event.entry_amount.unwrap();
-                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+                    let update_user_balance = User::update_balance(user.id, "", "", new_balance, redis_client.to_owned(), redis_actor, connection).await;
                     let Ok(updated_user_data) = update_user_balance else{
 
                         let err_resp = update_user_balance.unwrap_err();
@@ -185,7 +185,7 @@ impl UserClp{
         };
 
         let new_balance = user.balance.unwrap() - entrance_fee;
-        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
+        let update_user_balance = User::update_balance(user.id, "", "", new_balance, redis_client.to_owned(), redis_actor.clone(), connection).await;
         let Ok(updated_user_balance_data) = update_user_balance else{
 
             let err_resp = update_user_balance.unwrap_err();
@@ -210,7 +210,7 @@ impl UserClp{
                 Err(e) => {
 
                     let new_balance = updated_user_balance_data.balance.unwrap() - entrance_fee;
-                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actor, connection).await;
+                    let update_user_balance = User::update_balance(user.id, "", "", new_balance, redis_client.to_owned(), redis_actor, connection).await;
                     let Ok(updated_user_balance_data) = update_user_balance else{
 
                         let err_resp = update_user_balance.unwrap_err();

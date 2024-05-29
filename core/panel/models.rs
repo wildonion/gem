@@ -28,6 +28,8 @@
     |   users_logins                  ---> methods of postgres users_logins table
     |   users_tickets                 ---> methods of postgres users_tickets table
     |   users_tokens                  ---> methods of postgres users_tokens table
+    |   user_treasury                 ---> methods of postgres user_treasury table
+    |   sys_treasury                  ---> methods of postgres sys_treasury table
     |
 */
 
@@ -55,3 +57,5 @@ pub mod users_friends;
 pub mod users_logins;
 pub mod users_tickets;
 pub mod users_tokens;
+pub mod user_treasury;
+pub mod sys_treasury;

@@ -64,7 +64,7 @@ pub(self) async fn update_user_balance_webhook(
                         };
 
                     let new_balance = if user_info.balance.is_none(){0 + updated_user_checkout.tokens} else{user_info.balance.unwrap() + updated_user_checkout.tokens};
-                    match User::update_balance(user_info.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await{
+                    match User::update_balance(user_info.id, "BuyToken", "Credit", new_balance, redis_client.to_owned(), redis_actix_actor, connection).await{
 
                         Ok(updated_user_data) => {
 

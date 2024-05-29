@@ -189,9 +189,9 @@ impl UserBalanceActor{
             for (owner_id, balance) in balance_data{
                 let user_info = User::find_by_id(owner_id, connection).await.unwrap();
                 let new_balance = if user_info.balance.is_none(){0 + balance} else{user_info.balance.unwrap() + balance};
-                if let Err(why) = User::update_balance(owner_id, new_balance, redis_client.clone(), redis_actix_actor.clone(), connection).await{
-                    error!("can't update user balance at the moment");
-                }
+                // if let Err(why) = User::update_balance(owner_id, new_balance, redis_client.clone(), redis_actix_actor.clone(), connection).await{
+                //     error!("can't update user balance at the moment");
+                // }
             }
 
         }

@@ -57,6 +57,165 @@ pub mod wallet;
 pub mod x;
 
 
+#[get("/user/get/all/treasury/{uid}")]
+#[passport(user)]
+pub async fn get_all_user_treasuries(
+    req: HttpRequest,
+    uid: web::Path<i32>,
+    storage: web::Data<Option<Arc<Storage>>>, // shared storage (none async redis, redis async pubsub conn, postgres and mongodb)
+) -> PanelHttpResponse{
+
+
+    let storage = storage.as_ref().to_owned(); /* as_ref() returns shared reference */
+    let redis_client = storage.as_ref().clone().unwrap().get_redis().await.unwrap();
+    let get_redis_conn = redis_client.get_async_connection().await;
+
+
+    /* 
+          ------------------------------------- 
+        | --------- PASSPORT CHECKING --------- 
+        | ------------------------------------- 
+        | granted_role has been injected into this 
+        | api body using #[passport()] proc macro 
+        | at compile time thus we're checking it
+        | at runtime
+        |
+    */
+    let granted_role = 
+        if granted_roles.len() == 3{ /* everyone can pass */
+            None /* no access is required perhaps it's an public route! */
+        } else if granted_roles.len() == 1{
+            match granted_roles[0]{ /* the first one is the right access */
+                "admin" => Some(UserRole::Admin),
+                "user" => Some(UserRole::User),
+                _ => Some(UserRole::Dev)
+            }
+        } else{ /* there is no shared route with eiter admin|user, admin|dev or dev|user accesses */
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                ACCESS_DENIED, // response message
+                StatusCode::FORBIDDEN, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        };
+
+    match storage.clone().unwrap().as_ref().get_pgdb().await{
+
+        Some(pg_pool) => {
+
+            let connection = &mut pg_pool.get().unwrap();
+
+
+            /* ------ ONLY USER CAN DO THIS LOGIC ------ */
+            match req.get_user(granted_role, connection).await{
+                Ok(token_data) => {
+                    
+                    let _id = token_data._id;
+                    let role = token_data.user_role;
+
+                    /* caller must have an screen_cid */
+                    let user = User::find_by_id(_id, connection).await.unwrap();
+                    if user.cid.is_none(){
+                        resp!{
+                            &[u8], //// the data type
+                            &[], //// response data
+                            USER_SCREEN_CID_NOT_FOUND, //// response message
+                            StatusCode::NOT_ACCEPTABLE, //// status code
+                            None::<Cookie<'_>>, //// cookie
+                        }
+                    }
+                    
+                    use crate::models::user_treasury::UserTreasury;
+                    use crate::models::user_treasury::UserWalletTreasuryRequest;
+                    use crate::schema::user_treasury;
+                    use crate::schema::user_treasury::dsl::*;
+
+                    let users_utreasury_data = user_treasury
+                        .filter(user_treasury::user_id.eq(_id))
+                        .load::<UserTreasury>(connection);
+                        
+                    let Ok(utreasury) = users_utreasury_data else{
+                        let resp = Response{
+                            data: Some(_id),
+                            message: &format!("User Has No Treasury Yet"),
+                            status: 404,
+                            is_error: true
+                        };
+                        return Ok(
+                            HttpResponse::NotFound().json(resp)
+                        )
+                    };
+
+                    
+                    let ut_vector = utreasury
+                        .into_iter()
+                        .map(|ut| {
+                            UserWalletTreasuryRequest{
+                                id: ut.id,
+                                user_id: ut.user_id,
+                                done_at: ut.done_at,
+                                amount: ut.amount,
+                                tx_type: ut.tx_type,
+                                wallet_info: UserWalletInfoResponse{
+                                    username: user.clone().username,
+                                    avatar: user.clone().avatar,
+                                    bio: user.clone().bio,
+                                    banner: user.clone().banner,
+                                    mail: user.clone().mail,
+                                    screen_cid: user.clone().screen_cid,
+                                    extra: user.clone().extra,
+                                    stars: user.clone().stars,
+                                    created_at: user.clone().created_at.to_string(),
+                                },
+                                treasury_type: ut.treasury_type,
+                            }
+                        }).collect::<Vec<UserWalletTreasuryRequest>>();
+                
+                    resp!{
+                        Vec<UserWalletTreasuryRequest>, //// the data type
+                        ut_vector, //// response data
+                        &format!("Fetched User Treasuries"), //// response message
+                        StatusCode::OK, //// status code
+                        None::<Cookie<'_>>, //// cookie
+                    }
+
+                },
+                Err(resp) => {
+                    
+                    /* 
+                        🥝 response can be one of the following:
+                        
+                        - NOT_FOUND_COOKIE_VALUE
+                        - NOT_FOUND_TOKEN
+                        - INVALID_COOKIE_TIME_HASH
+                        - INVALID_COOKIE_FORMAT
+                        - EXPIRED_COOKIE
+                        - USER_NOT_FOUND
+                        - NOT_FOUND_COOKIE_TIME_HASH
+                        - ACCESS_DENIED, 
+                        - NOT_FOUND_COOKIE_EXP
+                        - INTERNAL_SERVER_ERROR 
+                    */
+                    resp
+                }
+            }
+
+        },
+        None => {
+
+            resp!{
+                &[u8], // the data type
+                &[], // response data
+                STORAGE_ISSUE, // response message
+                StatusCode::INTERNAL_SERVER_ERROR, // status code
+                None::<Cookie<'_>>, // cookie
+            }
+        }
+    }
+
+}
+
 
 //  -------------------------
 // |   component setups

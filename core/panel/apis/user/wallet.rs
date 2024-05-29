@@ -1072,7 +1072,7 @@ pub(self) async fn deposit(
 
                             if !mint_tx_hash.is_empty(){
 
-                                let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
+                                let update_user_balance = User::update_balance(user.id, "TransferGiftCard", "Debit", new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
                                 let Ok(updated_user_balance_data) = update_user_balance else{
                                     
                                     let err_resp = update_user_balance.unwrap_err();
@@ -1110,7 +1110,7 @@ pub(self) async fn deposit(
                                 if uubd.is_some(){
                                     let updated_user_balance_data = uubd.unwrap();
                                     let new_balance = updated_user_balance_data.balance.unwrap() + deposit_object.amount;
-                                    let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
+                                    let update_user_balance = User::update_balance(user.id, "ErrorTransferGiftCard", "Credit", new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
                                     let Ok(updated_user_data) = update_user_balance else{
         
                                         let err_resp = update_user_balance.unwrap_err();
@@ -1491,7 +1491,7 @@ pub(self) async fn withdraw(
                         transfer_tx_hash = res_transfer.0; // moving into another type
 
                         let new_balance = if user.balance.is_none(){0 + deposit_info.amount} else{user.balance.unwrap() + deposit_info.amount};
-                        let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
+                        let update_user_balance = User::update_balance(user.id, "ClaimGiftCard", "Credit", new_balance, redis_client.to_owned(), redis_actix_actor.clone(), connection).await;
                         let Ok(updated_user_balance_data) = update_user_balance else{
 
                             let err_resp = update_user_balance.unwrap_err();
@@ -1529,7 +1529,7 @@ pub(self) async fn withdraw(
                         } else{
 
                             let new_balance = updated_user_balance_data.balance.unwrap() - deposit_info.amount;
-                            let update_user_balance = User::update_balance(user.id, new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
+                            let update_user_balance = User::update_balance(user.id, "ClaimGiftCard", "Debit", new_balance, redis_client.to_owned(), redis_actix_actor, connection).await;
                             let Ok(updated_user_balance_data) = update_user_balance else{
 
                                 let err_resp = update_user_balance.unwrap_err();
